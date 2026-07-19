@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Tutor Prototype</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <h1>AI Tutor — Equivalent Fractions</h1>
+
+  <div id="chat"></div>
+  <div id="feedback" style="display:none;">
+    <p>Did you get it right?</p>
+    <button onclick="logAttempt(true)">✅ Got it right</button>
+    <button onclick="logAttempt(false)">❌ Got it wrong</button>
+  </div>
+
+  <input type="text" id="question" placeholder="Ask a question or type your answer...">
+  <button onclick="ask()">Send</button>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>

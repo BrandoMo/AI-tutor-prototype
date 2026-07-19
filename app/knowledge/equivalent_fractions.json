@@ -1,0 +1,24 @@
+{
+  "concept": "equivalent_fractions",
+  "display_name": "Equivalent Fractions",
+  "rule": "Two fractions are equivalent if multiplying or dividing the numerator and denominator by the same nonzero number gives one from the other.",
+  "misconceptions": [
+    "Thinking you only need to change the numerator OR the denominator, not both together.",
+    "Confusing 'equivalent' with 'written exactly the same way'.",
+    "Adding the same number to numerator and denominator instead of multiplying/dividing."
+  ],
+  "worked_examples": [
+    {
+      "problem": "Is 2/4 equivalent to 1/2?",
+      "reasoning": "Divide both numerator and denominator of 2/4 by 2: 2/2=1, 4/2=2. Result is 1/2. Yes, they are equivalent."
+    },
+    {
+      "problem": "Find a fraction equivalent to 3/5 with denominator 15.",
+      "reasoning": "15 is 5 multiplied by 3, so multiply numerator and denominator by 3: 3x3=9, 5x3=15. Answer: 9/15."
+    }
+  ],
+  "prerequisites": [
+    "Understanding what numerator and denominator represent",
+    "Basic multiplication and division facts"
+  ]
+}
