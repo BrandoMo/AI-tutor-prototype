@@ -127,18 +127,6 @@ attempts.
 - **Activate the venv from an already-open terminal**, not by double-clicking
   `activate.bat` in File Explorer — that opens and immediately closes a new
   window since there's nothing keeping it open afterward.
-
-## What's NOT built yet (Phase 2 ideas)
-
-- Only one concept (`equivalent_fractions`) has a knowledge base entry —
-  adding more is just adding more JSON files to `app/knowledge/`
-- No real database — Redis stores state as simple JSON blobs, fine for a
-  prototype but not for structured querying across many students
-- No automatic error-type classification — the student manually types what
-  went wrong; a smarter version might have the LLM tag it automatically
-- No deployment yet — this runs locally; Render (free tier) is the intended
-  next step for hosting
-
 ## Costs
 
 Everything above runs on free tiers:
