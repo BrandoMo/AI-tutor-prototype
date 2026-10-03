@@ -1,5 +1,6 @@
 const studentId = "test_student_1"; // hardcoded for prototype
 const concept = "equivalent_fractions";
+let lastQuestion = null; // saved with the attempt so the tutor sees what was typed
 
 async function ask() {
   const input = document.getElementById("question");
@@ -10,13 +11,26 @@ async function ask() {
   chat.textContent += `\nYou: ${question}\n`;
   input.value = "";
 
-  const res = await fetch("/ask", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ student_id: studentId, concept: concept, question: question })
-  });
+  let res;
+  try {
+    res = await fetch("/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ student_id: studentId, concept: concept, question: question })
+    });
+  } catch (err) {
+    chat.textContent += `\n[Could not reach the tutor — network error. Try again.]\n`;
+    return;
+  }
 
-  const data = await res.json();
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    chat.textContent += `\n[Tutor error: ${data.detail || "server error"}. Try again.]\n`;
+    chat.scrollTop = chat.scrollHeight;
+    return;
+  }
+
+  lastQuestion = question;
   chat.textContent += `\nTutor: ${data.explanation}\n`;
   chat.scrollTop = chat.scrollHeight;
 
@@ -42,7 +56,8 @@ async function logAttempt(wasCorrect) {
         student_id: studentId,
         concept: concept,
         correct: wasCorrect,
-        error_type: errorType
+        error_type: errorType,
+        answer: lastQuestion
       })
     });
   } catch (err) {

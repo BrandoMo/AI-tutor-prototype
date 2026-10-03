@@ -108,6 +108,15 @@ Open `http://127.0.0.1:8000` in your browser. Ask a question about
 equivalent fractions, then use the "Got it right / wrong" buttons to log
 attempts.
 
+### 7. Run the tests (optional)
+
+```
+pip install -r requirements-dev.txt
+python -m pytest
+```
+
+Tests stub out Redis and Gemini, so they run offline with no API keys.
+
 ---
 
 ## Known gotchas (learned the hard way)

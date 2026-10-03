@@ -2,7 +2,7 @@
 Student state management, backed by Upstash Redis.
 
 Kept isolated in this module so main.py never needs to know HOW state
-is stored -- only that get_state() and update_state() exist.
+is stored -- only that get_state() and log_attempt() exist.
 """
 
 import os
@@ -20,7 +20,7 @@ redis = Redis(
 
 DEFAULT_STATE = {
     "current_concept": None,
-    "attempts": []  # list of {"concept": ..., "correct": bool, "error_type": str|None}
+    "attempts": []  # list of {"concept": ..., "correct": bool, "error_type": str|None, "answer": str|None}
 }
 
 
@@ -32,21 +32,15 @@ def get_state(student_id: str) -> dict:
     return json.loads(raw)
 
 
-def update_state(student_id: str, **changes) -> dict:
-    """Merge changes into the student's state and save."""
-    state = get_state(student_id)
-    state.update(changes)
-    redis.set(f"student:{student_id}", json.dumps(state))
-    return state
-
-
-def log_attempt(student_id: str, concept: str, correct: bool, error_type: str = None):
+def log_attempt(student_id: str, concept: str, correct: bool,
+                error_type: str = None, answer: str = None):
     """Append an attempt record, keeping only the last 5 for prompt context."""
     state = get_state(student_id)
     state["attempts"].append({
         "concept": concept,
         "correct": correct,
-        "error_type": error_type
+        "error_type": error_type,
+        "answer": answer
     })
     state["attempts"] = state["attempts"][-5:]
     redis.set(f"student:{student_id}", json.dumps(state))

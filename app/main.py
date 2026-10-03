@@ -36,7 +36,12 @@ def ask(req: AskRequest):
     concept_facts = load_concept(req.concept)
     student_state = get_state(req.student_id)
 
-    explanation = generate_explanation(concept_facts, student_state, req.question)
+    try:
+        explanation = generate_explanation(concept_facts, student_state, req.question)
+    except Exception as e:
+        # Surface LLM failures (quota, stale model name, network) as JSON
+        # the frontend can show, instead of an opaque 500
+        raise HTTPException(status_code=502, detail=f"Tutor is unavailable: {e}")
 
     return {"explanation": explanation}
 
@@ -46,11 +51,13 @@ class AttemptRequest(BaseModel):
     concept: str
     correct: bool
     error_type: str | None = None
+    answer: str | None = None  # what the student actually typed
 
 
 @app.post("/attempt")
 def attempt(req: AttemptRequest):
-    state = log_attempt(req.student_id, req.concept, req.correct, req.error_type)
+    load_concept(req.concept)  # reject unknown/invalid concepts up front
+    state = log_attempt(req.student_id, req.concept, req.correct, req.error_type, req.answer)
     return {"state": state}
 
 

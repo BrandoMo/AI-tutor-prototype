@@ -32,7 +32,11 @@ def build_prompt(concept_facts: dict, student_state: dict, student_question: str
     Kept as its own function so we can tweak prompt wording without
     touching the API call logic.
     """
-    recent_attempts = student_state.get("attempts", [])
+    # Only this concept's attempts are relevant to this explanation
+    recent_attempts = [
+        a for a in student_state.get("attempts", [])
+        if a.get("concept") == concept_facts.get("concept")
+    ]
 
     prompt = f"""You are a patient math tutor. Explain the concept below to a student,
 using ONLY the facts provided. Do not introduce rules or examples that
