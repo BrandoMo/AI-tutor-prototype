@@ -6,6 +6,7 @@ is stored -- only that get_state() and update_state() exist.
 """
 
 import os
+import copy
 import json
 from dotenv import load_dotenv
 from upstash_redis import Redis
@@ -27,7 +28,7 @@ def get_state(student_id: str) -> dict:
     """Return this student's current state, or a fresh default."""
     raw = redis.get(f"student:{student_id}")
     if raw is None:
-        return dict(DEFAULT_STATE)
+        return copy.deepcopy(DEFAULT_STATE)
     return json.loads(raw)
 
 

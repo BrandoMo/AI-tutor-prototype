@@ -1,6 +1,7 @@
 import json
 import os
-from fastapi import FastAPI
+import re
+from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -14,7 +15,12 @@ KNOWLEDGE_DIR = os.path.join(os.path.dirname(__file__), "knowledge")
 
 
 def load_concept(concept_name: str) -> dict:
+    # Only allow plain names like "equivalent_fractions" -- no path separators
+    if not re.fullmatch(r"[a-z0-9_]+", concept_name):
+        raise HTTPException(status_code=400, detail="Invalid concept name")
     path = os.path.join(KNOWLEDGE_DIR, f"{concept_name}.json")
+    if not os.path.isfile(path):
+        raise HTTPException(status_code=404, detail="Unknown concept")
     with open(path, "r") as f:
         return json.load(f)
 
