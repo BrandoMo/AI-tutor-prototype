@@ -15,8 +15,9 @@ def test_register_signs_you_in():
     c = anonymous()
     r = c.post("/register", json={"username": "  Sam_1 ", "password": "correct horse"})
     assert r.status_code == 200
-    assert r.json() == {"username": "sam_1"}  # trimmed and lowercased
-    assert c.get("/me").json() == {"username": "sam_1"}
+    me = {"username": "sam_1", "role": "student", "class": None}  # trimmed and lowercased
+    assert r.json() == me
+    assert c.get("/me").json() == me
 
 
 def test_password_is_hashed_not_stored():
@@ -75,7 +76,7 @@ def test_login_and_logout(make_client):
     assert c.get("/me").status_code == 401
     r = c.post("/login", json={"username": "Sam", "password": "correct horse"})
     assert r.status_code == 200
-    assert c.get("/me").json() == {"username": "sam"}
+    assert c.get("/me").json()["username"] == "sam"
 
     token = c.cookies["session"]
     assert c.post("/logout").status_code == 200

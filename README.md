@@ -41,6 +41,10 @@ generating new explanations for the same concept.
 8. Students **sign in** with a username and password (`app/auth.py`). Each
    student has their own history and progress, and the server decides who is
    asking from the session — the browser can't claim to be someone else.
+9. **Teachers** (`app/classes.py`) create classes and share a join code.
+   Their dashboard shows each student's progress, the mistakes the class
+   makes most, and lets them issue one-time password reset codes, unlock
+   accounts, and remove students.
 
 ## Stack
 
@@ -122,6 +126,14 @@ When the app is deployed somewhere served over HTTPS, also add
 `COOKIE_SECURE=true` so the sign-in cookie is never sent over plain HTTP.
 Leave it out for local use on `http://127.0.0.1`.
 
+To let teachers sign up, set `TEACHER_SIGNUP_CODE` to a long random value
+and share it only with teachers. Generate one with:
+```
+python -c "import secrets; print(secrets.token_urlsafe(16))"
+```
+Leave it empty and nobody can sign up as a teacher. Changing it stops new
+teacher sign-ups but doesn't affect existing teachers.
+
 ### 6. Run it
 
 ```
@@ -135,9 +147,25 @@ answer gets a hint and a second try, and the next problem adapts to your
 mistakes. You can also ask the tutor questions directly.
 
 How accounts work: passwords are hashed with scrypt, never stored; the
-browser holds only a random session token in an HttpOnly cookie (30 days);
-10 wrong passwords lock that username for 15 minutes. There's no password
-reset yet — a forgotten password means a new account.
+browser holds only a random session token in an HttpOnly cookie (30 days).
+
+**Teachers:** tick "I'm a teacher" when creating an account and enter the
+teacher sign-up code. Make a class, then give students its join code
+(like `K7Q-3MP`) — they enter it once after signing in. The dashboard shows
+each student's progress and the class's most common mistakes.
+
+**Forgotten passwords:** on the dashboard the teacher clicks "Reset
+password" next to the student and gives them the one-time code it shows
+(valid 24 hours). The student chooses "Forgot your password?" on the
+sign-in screen, enters it, and picks a new password; any other devices they
+were signed in on are signed out. Teachers who forget their own password
+need the site owner to remove their `user:<name>` key in Upstash.
+
+**Lockout:** 10 wrong passwords lock a username for 15 minutes — but only
+on browsers that have never signed in to that account. A browser that has
+signed in before (it holds a "trusted device" cookie) keeps working, so
+someone guessing elsewhere can't lock a student out of their own device.
+Teachers see a 🔒 badge and can unlock early.
 
 To add problems, append to `practice_problems` in the concept's JSON file.
 Each needs a `prompt`, an `answer`, an `answer_format` (`"fraction"`, which

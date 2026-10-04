@@ -218,6 +218,17 @@ button.link {
   text-underline-offset: 3px;
 }
 
+.class-chip {
+  padding: 3px 12px;
+  border: 2.5px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 14px;
+  font-weight: 800;
+}
+.view-toggle { margin-left: auto; }
+.view-toggle + .themes { margin-left: 0; }
+
 /* Palette picker: one circle per palette, showing its own colours */
 .themes {
   display: flex;
@@ -290,6 +301,120 @@ button.link {
 }
 .mode[aria-pressed="true"] { background: var(--primary); color: var(--on-primary); }
 .pill.wide { width: 100%; margin-top: 20px; }
+.auth .check { display: flex; align-items: center; gap: 10px; margin-top: 16px; }
+.auth .check input { width: 22px; height: 22px; accent-color: var(--primary); }
+.auth-links { margin: 14px 0 0; text-align: center; }
+
+/* Join-a-class card (students) */
+.join h2 { margin: 0 0 12px; font: 600 22px/1.2 "Fredoka", sans-serif; }
+.join .link { margin-top: 10px; }
+
+/* Teacher dashboard */
+.card-title { margin: 0 0 14px; font: 600 24px/1.2 "Fredoka", sans-serif; }
+.section-title { margin: 24px 0 10px; font: 600 19px/1.2 "Fredoka", sans-serif; }
+.class-tabs { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+.class-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px 8px 18px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 16px;
+}
+.class-tab[aria-pressed="true"] { background: var(--primary); color: var(--on-primary); }
+.class-tab .count {
+  min-width: 28px; height: 28px;
+  padding: 0 6px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  color: var(--ink);
+  border: 2px solid var(--line);
+  font-size: 14px;
+}
+.new-class input { height: 52px; font-size: 17px; }
+.new-class .round { width: 52px; height: 52px; font-size: 26px; }
+.class-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.class-head .card-title { margin: 0; }
+.round.small { width: 44px; height: 44px; font-size: 20px; }
+.join-code {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0 18px;
+  font-weight: 700;
+}
+.join-code strong {
+  padding: 6px 16px;
+  border: var(--border) solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-2);
+  font: 600 22px/1.2 "Fredoka", sans-serif;
+  letter-spacing: 0.08em;
+}
+
+/* Stat tiles: big numbers in circles */
+.tiles { display: flex; gap: 12px; justify-content: space-around; }
+.tile { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; max-width: 160px; text-align: center; }
+.tile-value {
+  width: 76px; height: 76px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--surface-2);
+  border: var(--border) solid var(--line);
+  font: 600 30px/1 "Fredoka", sans-serif;
+}
+.tile-label { font-weight: 800; color: var(--ink-soft); font-size: 15px; }
+
+/* Mistakes: one thin bar per misconception, share of the class */
+.bars { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.bar-head { display: flex; justify-content: space-between; gap: 12px; font-weight: 700; margin-bottom: 6px; }
+.bar-value { color: var(--ink-soft); white-space: nowrap; }
+.bar-track { height: 14px; border-radius: 4px; background: var(--surface-2); border: 2px solid var(--line); overflow: hidden; }
+.bar-fill { height: 100%; background: var(--primary); border-radius: 0 4px 4px 0; }
+
+/* Student list */
+.students { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.student {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.2fr) 1.5fr auto;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 12px 14px;
+  border: 2.5px solid var(--line);
+  border-radius: 20px;
+  background: var(--surface-2);
+}
+.student-who { display: flex; align-items: center; gap: 10px; }
+.student-name { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.student-when { flex-basis: 100%; font-size: 14px; color: var(--ink-soft); }
+.badge-text {
+  padding: 1px 9px;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 13px;
+  font-weight: 800;
+}
+.badge-text.locked { background: var(--bad); color: var(--on-bad); }
+.student-stats { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 15px; }
+.student-actions { display: flex; flex-wrap: wrap; gap: 4px 12px; justify-content: flex-end; }
+.reset-note { grid-column: 1 / -1; margin: 4px 0 0; font-weight: 700; }
+.reset-code {
+  display: inline-block;
+  margin: 0 4px;
+  padding: 2px 10px;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  font: 600 18px "Fredoka", sans-serif;
+  letter-spacing: 0.08em;
+}
 
 /* Practice */
 .practice-head {
@@ -500,8 +625,14 @@ button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
   to { transform: translate(var(--dx), var(--dy)) scale(0.3); opacity: 0; }
 }
 
+@media (max-width: 600px) {
+  .student { grid-template-columns: 1fr; }
+  .student-actions { justify-content: flex-start; }
+}
+
 @media (max-width: 480px) {
   .card { padding: 18px; }
+  .tile-value { width: 64px; height: 64px; font-size: 26px; }
   .pie svg { width: 72px; height: 72px; }
   .problem-row { gap: 14px; }
   .round.big { width: 84px; height: 84px; }

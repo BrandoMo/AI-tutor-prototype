@@ -1,13 +1,14 @@
 import json
 import os
 import re
+import time
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
-from app import auth
-from app.auth import current_student
+from app import auth, classes
+from app.auth import current_student, current_user, require_teacher
 from app.grading import MAX_TRIES, InvalidAnswer, check_answer, find_problem, pending_retry
 from app.llm_client import generate_explanation
 from app.progress import concept_progress, pick_next, progress_summary, update_progress
@@ -44,18 +45,32 @@ class Credentials(BaseModel):
     password: str = Field(max_length=200)
 
 
+class Registration(Credentials):
+    teacher_code: str | None = Field(default=None, max_length=200)
+
+
+def me_payload(username: str) -> dict:
+    user = auth.get_user(username)
+    cls = classes.get_class(user["class"]) if user["class"] else None
+    return {
+        "username": username,
+        "role": user["role"],
+        "class": {"code": user["class"], "name": cls["name"]} if cls else None,
+    }
+
+
 @app.post("/register")
-def register(creds: Credentials, response: Response):
-    username = auth.register(creds.username, creds.password)
+def register(reg: Registration, response: Response):
+    username = auth.register(reg.username, reg.password, reg.teacher_code)
     auth.start_session(response, username)
-    return {"username": username}
+    return me_payload(username)
 
 
 @app.post("/login")
-def login(creds: Credentials, response: Response):
-    username = auth.login(creds.username, creds.password)
-    auth.start_session(response, username)
-    return {"username": username}
+def login(creds: Credentials, request: Request, response: Response):
+    username = auth.login(creds.username, creds.password, request)
+    auth.start_session(response, username, request.cookies.get(auth.device_cookie_name(username)))
+    return me_payload(username)
 
 
 @app.post("/logout")
@@ -65,8 +80,75 @@ def logout(request: Request, response: Response):
 
 
 @app.get("/me")
-def me(student_id: str = Depends(current_student)):
-    return {"username": student_id}
+def me(user: dict = Depends(current_user)):
+    return me_payload(user["username"])
+
+
+class PasswordReset(BaseModel):
+    username: str = Field(max_length=100)
+    code: str = Field(max_length=40)
+    new_password: str = Field(max_length=200)
+
+
+@app.post("/reset-password")
+def reset_password(req: PasswordReset, request: Request, response: Response):
+    username = auth.reset_password(req.username, req.code, req.new_password)
+    auth.start_session(response, username, request.cookies.get(auth.device_cookie_name(username)))
+    return me_payload(username)
+
+
+# --- Classes ---
+
+class JoinRequest(BaseModel):
+    code: str = Field(max_length=20)
+
+
+@app.post("/join")
+def join(req: JoinRequest, user: dict = Depends(current_user)):
+    return {"class": classes.join_class(user["username"], req.code)}
+
+
+class NewClass(BaseModel):
+    name: str = Field(max_length=100)
+
+
+@app.get("/classes")
+def list_classes(teacher: dict = Depends(require_teacher)):
+    return {"classes": classes.list_classes(teacher["username"])}
+
+
+@app.post("/classes")
+def create_class(req: NewClass, teacher: dict = Depends(require_teacher)):
+    return classes.create_class(teacher["username"], req.name)
+
+
+@app.get("/classes/{code}")
+def class_dashboard(code: str, concept: str = "equivalent_fractions",
+                    teacher: dict = Depends(require_teacher)):
+    code, cls = classes.owned_class(teacher["username"], code)
+    report = classes.class_report(code, load_concept(concept))
+    return {"code": code, "name": cls["name"], **report}
+
+
+@app.post("/classes/{code}/students/{username}/reset-code")
+def student_reset_code(code: str, username: str, teacher: dict = Depends(require_teacher)):
+    code, _ = classes.owned_class(teacher["username"], code)
+    student = classes.class_member(code, username)
+    return {"username": student, "code": auth.issue_reset_code(student), "expires_in_hours": auth.RESET_HOURS}
+
+
+@app.post("/classes/{code}/students/{username}/unlock")
+def student_unlock(code: str, username: str, teacher: dict = Depends(require_teacher)):
+    code, _ = classes.owned_class(teacher["username"], code)
+    auth.unlock(classes.class_member(code, username))
+    return {"ok": True}
+
+
+@app.delete("/classes/{code}/students/{username}")
+def student_remove(code: str, username: str, teacher: dict = Depends(require_teacher)):
+    code, _ = classes.owned_class(teacher["username"], code)
+    classes.remove_student(code, classes.class_member(code, username))
+    return {"ok": True}
 
 
 # --- Tutoring (all need a signed-in student) ---
@@ -146,6 +228,7 @@ def answer(req: AnswerRequest, student_id: str = Depends(current_student)):
     }
     add_attempt(state, record)
     update_progress(state, record, p)
+    state["last_active"] = int(time.time())  # shown on the teacher dashboard
     save_state(student_id, state)
 
     progress = progress_summary(state, req.concept)
