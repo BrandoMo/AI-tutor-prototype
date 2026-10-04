@@ -8,6 +8,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;700;800&display=swap">
   <link rel="stylesheet" href="/static/style.css">
+  <script>
+    // Apply the saved palette before the page paints, so there's no flash of the default
+    try {
+      const saved = localStorage.getItem("palette");
+      if (saved) document.documentElement.dataset.palette = saved;
+    } catch (e) {}
+  </script>
 </head>
 <body>
   <div class="decor" aria-hidden="true">
@@ -21,6 +28,29 @@
         <p class="eyebrow">AI Tutor</p>
         <h1>Equivalent Fractions</h1>
       </div>
+      <fieldset class="themes">
+        <legend class="sr-only">Colour theme</legend>
+        <label class="theme-option" title="Sunny Pop">
+          <input type="radio" name="palette" value="sunny">
+          <span class="ring"><span class="swatch" data-palette="sunny"></span></span>
+          <span class="sr-only">Sunny Pop</span>
+        </label>
+        <label class="theme-option" title="Midnight Neon">
+          <input type="radio" name="palette" value="neon">
+          <span class="ring"><span class="swatch" data-palette="neon"></span></span>
+          <span class="sr-only">Midnight Neon</span>
+        </label>
+        <label class="theme-option" title="Ocean Splash">
+          <input type="radio" name="palette" value="ocean">
+          <span class="ring"><span class="swatch" data-palette="ocean"></span></span>
+          <span class="sr-only">Ocean Splash</span>
+        </label>
+        <label class="theme-option" title="Berry Blast">
+          <input type="radio" name="palette" value="berry">
+          <span class="ring"><span class="swatch" data-palette="berry"></span></span>
+          <span class="sr-only">Berry Blast</span>
+        </label>
+      </fieldset>
     </header>
 
     <section class="card practice" aria-labelledby="practice-title">

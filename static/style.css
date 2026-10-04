@@ -1,5 +1,12 @@
-/* Palette: every colour lives here, so swapping themes is one block */
-:root {
+/*
+ * Palettes: every colour lives in these blocks. The default (Sunny Pop)
+ * sits on :root; the others override it when <html data-palette="...">
+ * is set. Equal specificity, so later blocks win -- keep the default first.
+ * A [data-palette] on any element (like the picker swatches) gives that
+ * element its palette's colours too.
+ */
+:root,
+[data-palette="sunny"] {
   --bg: #FFE14D;
   --surface: #FFFFFF;
   --surface-2: #FFF5C2;
@@ -22,7 +29,85 @@
   --decor-1: #FF3D81;
   --decor-2: #3B5BFF;
   --decor-3: #18D39A;
+}
 
+[data-palette="neon"] {
+  --bg: #110E33;
+  --surface: #1D1950;
+  --surface-2: #2A2570;
+  --ink: #FFFFFF;
+  --ink-soft: #C8C3F5;
+  --line: #F2F0FF;
+  --shadow: #3DF2FF;
+  --primary: #C8FF3D;
+  --on-primary: #110E33;
+  --accent: #FF5CAB;
+  --on-accent: #110E33;
+  --good: #3DFFA2;
+  --on-good: #110E33;
+  --bad: #FF6B6B;
+  --on-bad: #110E33;
+  --tutor-bubble: #2A2570;
+  --on-tutor: #FFFFFF;
+  --me-bubble: #C8FF3D;
+  --on-me: #110E33;
+  --decor-1: #FF5CAB;
+  --decor-2: #3DF2FF;
+  --decor-3: #C8FF3D;
+  color-scheme: dark;
+}
+
+[data-palette="ocean"] {
+  --bg: #BDEBFF;
+  --surface: #FFFFFF;
+  --surface-2: #E8F7FF;
+  --ink: #0A2342;
+  --ink-soft: #3B5878;
+  --line: #0A2342;
+  --shadow: #0A2342;
+  --primary: #E06A00;
+  --on-primary: #0A2342;
+  --accent: #0060DD;
+  --on-accent: #FFFFFF;
+  --good: #00C58A;
+  --on-good: #0A2342;
+  --bad: #FF4D5E;
+  --on-bad: #0A2342;
+  --tutor-bubble: #E8F7FF;
+  --on-tutor: #0A2342;
+  --me-bubble: #0060DD;
+  --on-me: #FFFFFF;
+  --decor-1: #FF8A00;
+  --decor-2: #0060DD;
+  --decor-3: #00C2C7;
+}
+
+[data-palette="berry"] {
+  --bg: #E9D9FF;
+  --surface: #FFFFFF;
+  --surface-2: #F6EEFF;
+  --ink: #23073D;
+  --ink-soft: #5A3F73;
+  --line: #23073D;
+  --shadow: #23073D;
+  --primary: #7A2CF5;
+  --on-primary: #FFFFFF;
+  --accent: #FF6A00;
+  --on-accent: #23073D;
+  --good: #00C9A7;
+  --on-good: #23073D;
+  --bad: #FF3D61;
+  --on-bad: #23073D;
+  --tutor-bubble: #F6EEFF;
+  --on-tutor: #23073D;
+  --me-bubble: #7A2CF5;
+  --on-me: #FFFFFF;
+  --decor-1: #FF6A00;
+  --decor-2: #7A2CF5;
+  --decor-3: #FFD23F;
+}
+
+:root {
   --border: 3px;
   --radius: 28px;
 }
@@ -58,7 +143,7 @@ body {
 }
 .decor .c1 { width: 240px; height: 240px; background: var(--decor-1); top: -135px; left: -135px; }
 .decor .c2 { width: 200px; height: 200px; border: 22px solid var(--decor-2); bottom: -50px; right: -60px; }
-.decor .c3 { width: 90px; height: 90px; background: var(--decor-3); top: 22%; right: 7%; }
+.decor .c3 { width: 90px; height: 90px; background: var(--decor-3); top: 36%; right: 7%; }
 .decor .c4 { width: 44px; height: 44px; background: var(--decor-2); bottom: 16%; left: 6%; }
 .decor .c5 { width: 24px; height: 24px; background: var(--decor-1); top: 58%; right: 16%; }
 
@@ -73,6 +158,7 @@ body {
 /* Header */
 .top {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 16px;
   margin-bottom: 22px;
@@ -100,6 +186,45 @@ body {
 h1 {
   margin: 0;
   font: 600 clamp(28px, 6vw, 38px)/1.1 "Fredoka", sans-serif;
+}
+
+/* Palette picker: one circle per palette, showing its own colours */
+.themes {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 0 auto;
+  padding: 0;
+  border: 0;
+}
+.theme-option {
+  position: relative;
+  cursor: pointer;
+  /* Resolved here, in the page's palette, before each swatch swaps in its own */
+  --swatch-border: var(--line);
+}
+.theme-option input {
+  position: absolute;
+  opacity: 0;
+  width: 100%; height: 100%;
+  margin: 0;
+  cursor: pointer;
+}
+.theme-option .ring {
+  display: block;
+  padding: 3px;
+  border: 3px solid transparent;
+  border-radius: 50%;
+  transition: border-color 0.15s, transform 0.15s;
+}
+.theme-option:hover .ring { transform: scale(1.08); }
+.theme-option input:checked + .ring { border-color: var(--ink); }
+.theme-option input:focus-visible + .ring { outline: 4px solid var(--accent); outline-offset: 2px; }
+.swatch {
+  display: block;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 2.5px solid var(--swatch-border);
+  background: conic-gradient(var(--bg) 0 34%, var(--primary) 0 67%, var(--accent) 0);
 }
 
 /* Cards */
@@ -306,5 +431,5 @@ button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
 @media (prefers-reduced-motion: reduce) {
   .confetti { display: none; }
   .typing .bubble span { animation: none; }
-  button, .dot { transition: none; }
+  button, .dot, .theme-option .ring { transition: none; }
 }

@@ -4,6 +4,22 @@ let currentProblem = null;
 
 const $ = (id) => document.getElementById(id);
 
+// --- Colour theme ---
+
+const PALETTES = ["sunny", "neon", "ocean", "berry"];
+
+function applyPalette(name) {
+  if (!PALETTES.includes(name)) name = "sunny";
+  document.documentElement.dataset.palette = name;
+  document.querySelector(`input[name="palette"][value="${name}"]`).checked = true;
+  try { localStorage.setItem("palette", name); } catch (e) {} // nice-to-have only
+}
+
+document.querySelectorAll('input[name="palette"]').forEach((radio) => {
+  radio.addEventListener("change", () => applyPalette(radio.value));
+});
+applyPalette(document.documentElement.dataset.palette);
+
 // --- Chat ---
 
 // role is "me", "tutor" or "note" (for errors and status messages)
