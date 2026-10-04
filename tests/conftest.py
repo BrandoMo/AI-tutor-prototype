@@ -46,6 +46,28 @@ class FakeRedis:
         self.ttls[key] = seconds
         return key in self.store
 
+    def mget(self, *keys):
+        return [self.get(k) for k in keys]
+
+    # Sets are stored as Python sets; real Redis returns members as a list
+    def sadd(self, key, *members):
+        s = self.store.setdefault(key, set())
+        before = len(s)
+        s.update(members)
+        return len(s) - before
+
+    def srem(self, key, *members):
+        s = self.store.get(key, set())
+        removed = len(s & set(members))
+        s.difference_update(members)
+        return removed
+
+    def smembers(self, key):
+        return list(self.store.get(key, set()))
+
+    def sismember(self, key, member):
+        return member in self.store.get(key, set())
+
 
 sys.modules["upstash_redis"] = types.SimpleNamespace(Redis=FakeRedis)
 

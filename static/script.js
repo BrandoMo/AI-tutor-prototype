@@ -5,14 +5,15 @@ const $ = (id) => document.getElementById(id);
 
 // --- Talking to the server ---
 
-// JSON request helper. The session cookie rides along automatically; a 401
-// means the session has ended, so go back to the sign-in screen.
-async function api(path, body) {
-  const options = body === undefined ? {} : {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body)
-  };
+// JSON request helper: GET with no body, POST with one (or pass a method).
+// The session cookie rides along automatically; a 401 means the session
+// has ended, so go back to the sign-in screen.
+async function api(path, body, method) {
+  const options = { method: method || (body === undefined ? "GET" : "POST") };
+  if (body !== undefined) {
+    options.headers = { "Content-Type": "application/json" };
+    options.body = JSON.stringify(body);
+  }
   let res;
   try {
     res = await fetch(path, options);
@@ -46,17 +47,30 @@ applyPalette(document.documentElement.dataset.palette);
 
 // --- Signing in ---
 
-let authMode = "login";
+let me = null;          // {username, role, class} for whoever is signed in
+let authMode = "login"; // "login", "register" or "reset"
+let practiceStarted = false;
 
 function setAuthMode(mode) {
   authMode = mode;
   const registering = mode === "register";
-  $("mode-login").setAttribute("aria-pressed", String(!registering));
+  const resetting = mode === "reset";
+  $("mode-login").setAttribute("aria-pressed", String(mode === "login"));
   $("mode-register").setAttribute("aria-pressed", String(registering));
-  $("auth-title").textContent = registering ? "Make your account" : "Welcome back!";
-  $("auth-submit").textContent = registering ? "Create account" : "Sign in";
-  $("password").autocomplete = registering ? "new-password" : "current-password";
-  $("auth-hint").hidden = !registering;
+  $("auth-title").textContent =
+    resetting ? "Choose a new password" : registering ? "Make your account" : "Welcome back!";
+  $("auth-submit").textContent =
+    resetting ? "Save new password" : registering ? "Create account" : "Sign in";
+  $("password-label").textContent = resetting ? "New password" : "Password";
+  $("password").autocomplete = mode === "login" ? "current-password" : "new-password";
+  $("reset-code-field").hidden = !resetting;
+  $("teacher-fields").hidden = !registering;
+  $("auth-hint").hidden = mode === "login";
+  $("auth-hint").textContent = resetting
+    ? "Your new password needs at least 8 characters."
+    : "3-20 letters, numbers or underscores. Password: at least 8 characters.";
+  $("forgot-link").hidden = mode !== "login";
+  $("back-to-signin").hidden = !resetting;
   setAuthError("");
 }
 
@@ -66,28 +80,64 @@ function setAuthError(text) {
 }
 
 function showAuth(message = "") {
+  me = null;
   currentProblem = null;
-  $("app-main").hidden = true;
-  $("user-area").hidden = true;
+  practiceStarted = false;
+  for (const id of ["app-main", "teacher-main", "user-area", "view-toggle"]) $(id).hidden = true;
   $("auth-card").hidden = false;
   $("password").value = "";
   setAuthError(message);
   $("username").focus();
 }
 
-function startApp(username) {
+function renderClassChip() {
+  const cls = me && me.class;
+  $("class-chip").textContent = cls ? cls.name : "";
+  $("class-chip").hidden = !cls;
+}
+
+function startApp(meData) {
+  me = meData;
   $("auth-card").hidden = true;
   $("user-area").hidden = false;
-  $("app-main").hidden = false;
-  $("user-name").textContent = username;
-  $("user-avatar").textContent = username[0].toUpperCase();
-  $("chat").replaceChildren();
-  addMessage("tutor", `Hi ${username}! Have a go at the problem above, or ask me anything about equivalent fractions.`);
-  loadProblem();
+  $("user-name").textContent = me.username;
+  $("user-avatar").textContent = me.username[0].toUpperCase();
+  renderClassChip();
+
+  const teacher = me.role === "teacher";
+  $("view-toggle").hidden = !teacher;
+  let dismissed = false;
+  try { dismissed = sessionStorage.getItem("join-later") === "1"; } catch (e) {}
+  $("join-card").hidden = teacher || Boolean(me.class) || dismissed;
+  showView(teacher ? "dashboard" : "practice");
+}
+
+// Teachers can switch between their dashboard and trying the practice
+function showView(view) {
+  const dashboard = view === "dashboard";
+  $("teacher-main").hidden = !dashboard;
+  $("app-main").hidden = dashboard;
+  $("view-dashboard").setAttribute("aria-pressed", String(dashboard));
+  $("view-practice").setAttribute("aria-pressed", String(!dashboard));
+  if (dashboard) {
+    startTeacher(); // teacher.js
+  } else if (!practiceStarted) {
+    practiceStarted = true;
+    $("chat").replaceChildren();
+    addMessage("tutor", `Hi ${me.username}! Have a go at the problem above, or ask me anything about equivalent fractions.`);
+    loadProblem();
+  }
 }
 
 $("mode-login").addEventListener("click", () => setAuthMode("login"));
 $("mode-register").addEventListener("click", () => setAuthMode("register"));
+$("forgot-link").addEventListener("click", () => setAuthMode("reset"));
+$("back-to-signin").addEventListener("click", () => setAuthMode("login"));
+$("is-teacher").addEventListener("change", () => {
+  $("teacher-code-field").hidden = !$("is-teacher").checked;
+});
+$("view-dashboard").addEventListener("click", () => showView("dashboard"));
+$("view-practice").addEventListener("click", () => showView("practice"));
 
 $("auth-form").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -97,20 +147,67 @@ $("auth-form").addEventListener("submit", async (e) => {
     setAuthError("Please enter a username and password.");
     return;
   }
+
+  let path, body;
+  if (authMode === "reset") {
+    const code = $("reset-code").value.trim();
+    if (!code) {
+      setAuthError("Please enter the reset code from your teacher.");
+      return;
+    }
+    path = "/reset-password";
+    body = { username, code, new_password: password };
+  } else if (authMode === "register") {
+    path = "/register";
+    body = { username, password };
+    if ($("is-teacher").checked) body.teacher_code = $("teacher-code").value;
+  } else {
+    path = "/login";
+    body = { username, password };
+  }
+
   $("auth-submit").disabled = true;
-  const { ok, data } = await api(authMode === "register" ? "/register" : "/login", { username, password });
+  const { ok, data } = await api(path, body);
   $("auth-submit").disabled = false;
   if (!ok) {
     setAuthError(data.detail || "Something went wrong — please try again.");
     return;
   }
   $("password").value = "";
-  startApp(data.username);
+  $("reset-code").value = "";
+  $("teacher-code").value = "";
+  setAuthMode("login");
+  startApp(data);
 });
 
 $("sign-out").addEventListener("click", async () => {
   await api("/logout", {});
   showAuth();
+});
+
+// --- Joining a class (students) ---
+
+$("join-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const code = $("join-code").value.trim();
+  if (!code) return;
+  const { ok, data } = await api("/join", { code });
+  const result = $("join-result");
+  result.hidden = false;
+  if (!ok) {
+    result.textContent = data.detail || "Could not join — try again.";
+    result.className = "result bad";
+    return;
+  }
+  me.class = data.class;
+  renderClassChip();
+  $("join-card").hidden = true;
+  addMessage("note", `You joined ${data.class.name}.`);
+});
+
+$("join-later").addEventListener("click", () => {
+  $("join-card").hidden = true;
+  try { sessionStorage.setItem("join-later", "1"); } catch (e) {}
 });
 
 // --- Chat ---
@@ -353,8 +450,9 @@ $("next-problem").addEventListener("click", loadProblem);
 
 // --- Start: signed in already? ---
 
-(async () => {
+// Runs after every script has loaded (teacher.js comes after this file)
+document.addEventListener("DOMContentLoaded", async () => {
   const { ok, data } = await api("/me");
-  if (ok) startApp(data.username);
+  if (ok) startApp(data);
   else showAuth(data.detail && data.detail.startsWith("Network") ? data.detail : "");
-})();
+});

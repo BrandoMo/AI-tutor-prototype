@@ -32,7 +32,12 @@
         <div class="user" id="user-area" hidden>
           <span class="user-avatar" id="user-avatar" aria-hidden="true"></span>
           <span class="user-name">Hi, <strong id="user-name"></strong></span>
+          <span class="class-chip" id="class-chip" hidden></span>
           <button type="button" class="link" id="sign-out">Sign out</button>
+        </div>
+        <div class="mode-toggle view-toggle" id="view-toggle" role="group" aria-label="Switch view" hidden>
+          <button type="button" class="mode" id="view-dashboard" aria-pressed="true">Dashboard</button>
+          <button type="button" class="mode" id="view-practice" aria-pressed="false">Practice</button>
         </div>
         <fieldset class="themes">
           <legend class="sr-only">Colour theme</legend>
@@ -69,15 +74,40 @@
       <form id="auth-form" novalidate>
         <label for="username">Username</label>
         <input type="text" id="username" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="20" required>
-        <label for="password">Password</label>
+        <div id="reset-code-field" hidden>
+          <label for="reset-code">Reset code from your teacher</label>
+          <input type="text" id="reset-code" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="12" placeholder="e.g. K7QX-3MPA">
+        </div>
+        <label for="password" id="password-label">Password</label>
         <input type="password" id="password" autocomplete="current-password" maxlength="200" required>
         <p class="hint" id="auth-hint" hidden>3-20 letters, numbers or underscores. Password: at least 8 characters.</p>
+        <div id="teacher-fields" hidden>
+          <label class="check"><input type="checkbox" id="is-teacher"> I'm a teacher</label>
+          <div id="teacher-code-field" hidden>
+            <label for="teacher-code">Teacher sign-up code</label>
+            <input type="password" id="teacher-code" autocomplete="off" maxlength="200">
+          </div>
+        </div>
         <p class="result bad" id="auth-error" role="alert" hidden></p>
         <button type="submit" class="pill wide" id="auth-submit">Sign in</button>
+        <p class="auth-links">
+          <button type="button" class="link" id="forgot-link">Forgot your password?</button>
+          <button type="button" class="link" id="back-to-signin" hidden>Back to sign in</button>
+        </p>
       </form>
     </section>
 
     <div id="app-main" hidden>
+      <section class="card join" id="join-card" aria-labelledby="join-title" hidden>
+        <h2 id="join-title">Got a class code from your teacher?</h2>
+        <form class="answer-row" id="join-form">
+          <label for="join-code" class="sr-only">Class code</label>
+          <input type="text" id="join-code" placeholder="e.g. K7Q-3MP" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="12">
+          <button type="submit" class="round">Join</button>
+        </form>
+        <p class="result" id="join-result" role="status" hidden></p>
+        <button type="button" class="link" id="join-later">Not now</button>
+      </section>
       <section class="card practice" aria-labelledby="practice-title">
         <div class="practice-head">
           <h2 id="practice-title" class="sr-only">Practice</h2>
@@ -124,9 +154,46 @@
         </form>
       </section>
     </div>
+
+    <div id="teacher-main" hidden>
+      <section class="card" aria-labelledby="classes-title">
+        <h2 id="classes-title" class="card-title">Your classes</h2>
+        <div class="class-tabs" id="class-tabs" role="group" aria-label="Choose a class"></div>
+        <p class="hint" id="no-classes" hidden>No classes yet — make your first one below.</p>
+        <form class="answer-row new-class" id="new-class-form">
+          <label for="new-class-name" class="sr-only">New class name</label>
+          <input type="text" id="new-class-name" placeholder="New class name" maxlength="40" autocomplete="off">
+          <button type="submit" class="round" aria-label="Create class">+</button>
+        </form>
+        <p class="result" id="new-class-result" role="status" hidden></p>
+      </section>
+
+      <section class="card" id="class-card" aria-labelledby="class-name" hidden>
+        <div class="class-head">
+          <h2 id="class-name" class="card-title"></h2>
+          <button type="button" class="round small" id="refresh-class" aria-label="Refresh">↻</button>
+        </div>
+        <div class="join-code">
+          <span>Students join with</span>
+          <strong id="class-code"></strong>
+          <button type="button" class="link" id="copy-code">Copy</button>
+        </div>
+
+        <div class="tiles" id="tiles"></div>
+
+        <h3 class="section-title">Most common mistakes</h3>
+        <ul class="bars" id="mistake-bars"></ul>
+        <p class="hint" id="no-mistakes" hidden>No mistakes recorded yet.</p>
+
+        <h3 class="section-title">Students</h3>
+        <ul class="students" id="student-list"></ul>
+        <p class="hint" id="no-students" hidden>No students yet. Share the join code above.</p>
+      </section>
+    </div>
   </main>
 
   <script src="/static/markdown.js"></script>
   <script src="/static/script.js"></script>
+  <script src="/static/teacher.js"></script>
 </body>
 </html>
