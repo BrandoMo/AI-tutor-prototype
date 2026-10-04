@@ -1,8 +1,32 @@
-const studentId = "test_student_1"; // hardcoded for prototype
 const concept = "equivalent_fractions";
 let currentProblem = null;
 
 const $ = (id) => document.getElementById(id);
+
+// --- Talking to the server ---
+
+// JSON request helper. The session cookie rides along automatically; a 401
+// means the session has ended, so go back to the sign-in screen.
+async function api(path, body) {
+  const options = body === undefined ? {} : {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  };
+  let res;
+  try {
+    res = await fetch(path, options);
+  } catch (err) {
+    return { ok: false, status: 0, data: { detail: "Network error — check your connection and try again." } };
+  }
+  const data = await res.json().catch(() => ({}));
+  if (res.status === 401 && path !== "/login" && path !== "/me") {
+    showAuth("You've been signed out — please sign in again.");
+  }
+  // FastAPI validation errors come back as a list; show something readable
+  if (Array.isArray(data.detail)) data.detail = "Please check what you typed and try again.";
+  return { ok: res.ok, status: res.status, data };
+}
 
 // --- Colour theme ---
 
@@ -19,6 +43,75 @@ document.querySelectorAll('input[name="palette"]').forEach((radio) => {
   radio.addEventListener("change", () => applyPalette(radio.value));
 });
 applyPalette(document.documentElement.dataset.palette);
+
+// --- Signing in ---
+
+let authMode = "login";
+
+function setAuthMode(mode) {
+  authMode = mode;
+  const registering = mode === "register";
+  $("mode-login").setAttribute("aria-pressed", String(!registering));
+  $("mode-register").setAttribute("aria-pressed", String(registering));
+  $("auth-title").textContent = registering ? "Make your account" : "Welcome back!";
+  $("auth-submit").textContent = registering ? "Create account" : "Sign in";
+  $("password").autocomplete = registering ? "new-password" : "current-password";
+  $("auth-hint").hidden = !registering;
+  setAuthError("");
+}
+
+function setAuthError(text) {
+  $("auth-error").textContent = text;
+  $("auth-error").hidden = !text;
+}
+
+function showAuth(message = "") {
+  currentProblem = null;
+  $("app-main").hidden = true;
+  $("user-area").hidden = true;
+  $("auth-card").hidden = false;
+  $("password").value = "";
+  setAuthError(message);
+  $("username").focus();
+}
+
+function startApp(username) {
+  $("auth-card").hidden = true;
+  $("user-area").hidden = false;
+  $("app-main").hidden = false;
+  $("user-name").textContent = username;
+  $("user-avatar").textContent = username[0].toUpperCase();
+  $("chat").replaceChildren();
+  addMessage("tutor", `Hi ${username}! Have a go at the problem above, or ask me anything about equivalent fractions.`);
+  loadProblem();
+}
+
+$("mode-login").addEventListener("click", () => setAuthMode("login"));
+$("mode-register").addEventListener("click", () => setAuthMode("register"));
+
+$("auth-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const username = $("username").value.trim();
+  const password = $("password").value;
+  if (!username || !password) {
+    setAuthError("Please enter a username and password.");
+    return;
+  }
+  $("auth-submit").disabled = true;
+  const { ok, data } = await api(authMode === "register" ? "/register" : "/login", { username, password });
+  $("auth-submit").disabled = false;
+  if (!ok) {
+    setAuthError(data.detail || "Something went wrong — please try again.");
+    return;
+  }
+  $("password").value = "";
+  startApp(data.username);
+});
+
+$("sign-out").addEventListener("click", async () => {
+  await api("/logout", {});
+  showAuth();
+});
 
 // --- Chat ---
 
@@ -59,22 +152,9 @@ function showTyping() {
 // Sends text to the tutor and shows its explanation in the chat
 async function askTutor(question) {
   const typing = showTyping();
-  let res;
-  try {
-    res = await fetch("/ask", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ student_id: studentId, concept: concept, question: question })
-    });
-  } catch (err) {
-    typing.remove();
-    addMessage("note", "Could not reach the tutor — network error. Try again.");
-    return;
-  }
-
-  const data = await res.json().catch(() => ({}));
+  const { ok, data } = await api("/ask", { concept: concept, question: question });
   typing.remove();
-  if (!res.ok) {
+  if (!ok) {
     addMessage("note", `Tutor error: ${data.detail || "server error"}. Try again.`);
     return;
   }
@@ -145,25 +225,32 @@ function drawPie(fraction) {
   pie.hidden = false;
 }
 
-function drawDots(number, total) {
+// Solved count, plus one dot per answer in the current right-first-time streak
+function renderProgress(progress) {
+  $("solved-count").textContent = progress.solved;
+  const filled = Math.min(progress.streak, progress.streak_goal);
   const dots = $("dots");
   dots.replaceChildren();
-  for (let i = 1; i <= total; i++) {
+  for (let i = 0; i < progress.streak_goal; i++) {
     const dot = document.createElement("span");
-    dot.className = "dot" + (i < number ? " done" : i === number ? " current" : "");
+    dot.className = i < filled ? "dot done" : "dot";
     dots.appendChild(dot);
   }
+  $("mastery").classList.toggle("mastered", progress.mastered);
+  $("mastery-label").textContent = progress.mastered ? "★ Mastered" : "Streak";
+  $("mastery").setAttribute("aria-label",
+    `${progress.mastered ? "Mastered. " : ""}Streak: ${filled} of ${progress.streak_goal} right first time`);
 }
 
 // A burst of little circles from the given element
-function celebrate(fromEl) {
+function celebrate(fromEl, count = 18) {
   const box = fromEl.getBoundingClientRect();
   const colors = ["--primary", "--accent", "--good", "--decor-1", "--decor-2", "--decor-3"];
-  for (let i = 0; i < 18; i++) {
+  for (let i = 0; i < count; i++) {
     const dot = document.createElement("span");
     dot.className = "confetti";
-    const angle = (i / 18) * 2 * Math.PI;
-    const distance = 70 + Math.random() * 60;
+    const angle = (i / count) * 2 * Math.PI;
+    const distance = 70 + Math.random() * (count > 18 ? 140 : 60);
     dot.style.left = `${box.left + box.width / 2 - 7}px`;
     dot.style.top = `${box.top + box.height / 2 - 7}px`;
     dot.style.background = `var(${colors[i % colors.length]})`;
@@ -178,32 +265,27 @@ async function loadProblem() {
   setResult("");
   $("next-problem").hidden = true;
 
-  let res;
-  try {
-    res = await fetch(`/problem?student_id=${encodeURIComponent(studentId)}&concept=${encodeURIComponent(concept)}`);
-  } catch (err) {
-    $("problem").textContent = "Could not load a problem — network error.";
-    return;
-  }
-  if (!res.ok) {
-    $("problem").textContent = "Could not load a problem — server error.";
+  const { ok, data } = await api(`/problem?concept=${encodeURIComponent(concept)}`);
+  if (!ok) {
+    $("problem").textContent = `Could not load a problem — ${data.detail || "server error"}`;
     return;
   }
 
-  currentProblem = await res.json();
-  $("problem").textContent = currentProblem.prompt;
-  $("problem-number").textContent = currentProblem.number;
-  drawDots(currentProblem.number, currentProblem.total);
-  drawPie(currentProblem.given);
+  currentProblem = data;
+  $("problem").textContent = data.prompt;
+  drawPie(data.given);
+  renderProgress(data.progress);
+  $("focus").textContent = data.focus ? `Practising: ${data.focus}` : "";
+  $("focus").hidden = !data.focus;
 
-  const yesNo = currentProblem.answer_format === "yes_no";
+  const yesNo = data.answer_format === "yes_no";
   $("fraction-form").hidden = yesNo;
   $("yesno-buttons").hidden = !yesNo;
   $("answer").value = "";
   setAnswerEnabled(true);
   if (!yesNo) $("answer").focus();
 
-  if (currentProblem.try > 1) setResult("Second try at this one.");
+  if (data.try > 1) setResult("Second try at this one.");
 }
 
 async function submitAnswer(answer, fromEl) {
@@ -211,35 +293,29 @@ async function submitAnswer(answer, fromEl) {
 
   // Lock input while checking so it can't be double-submitted
   setAnswerEnabled(false);
-  let res;
-  try {
-    res = await fetch("/answer", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        student_id: studentId,
-        concept: concept,
-        problem_id: currentProblem.id,
-        answer: answer
-      })
-    });
-  } catch (err) {
-    setResult("Could not check your answer — network error. Try again.", "bad");
+  const { ok, status, data } = await api("/answer", {
+    concept: concept,
+    problem_id: currentProblem.id,
+    answer: answer
+  });
+  if (status === 401) return; // back on the sign-in screen
+  if (!ok) {
+    // e.g. "Please answer with a fraction like 3/4." -- let them fix it
+    setResult(data.detail || "Could not check your answer — server error.", status === 400 ? "" : "bad");
     setAnswerEnabled(true);
     return;
   }
 
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    // e.g. "Please answer with a fraction like 3/4." -- let them fix it
-    setResult(data.detail || "Could not check your answer — server error.");
-    setAnswerEnabled(true);
-    return;
-  }
+  renderProgress(data.progress);
 
   if (data.correct) {
-    setResult(data.try > 1 ? "Correct on your second try!" : "Correct!", "good");
-    celebrate(fromEl);
+    if (data.just_mastered) {
+      setResult(`Correct! That's ${data.progress.streak_goal} right first time in a row — you've mastered equivalent fractions! ★`, "good");
+      celebrate(fromEl, 36);
+    } else {
+      setResult(data.try > 1 ? "Correct on your second try!" : "Correct!", "good");
+      celebrate(fromEl);
+    }
     $("next-problem").hidden = false;
     $("next-problem").focus();
     return;
@@ -275,5 +351,10 @@ document.querySelectorAll("#yesno-buttons button").forEach((button) => {
 });
 $("next-problem").addEventListener("click", loadProblem);
 
-addMessage("tutor", "Hi! Have a go at the problem above, or ask me anything about equivalent fractions.");
-loadProblem();
+// --- Start: signed in already? ---
+
+(async () => {
+  const { ok, data } = await api("/me");
+  if (ok) startApp(data.username);
+  else showAuth(data.detail && data.detail.startsWith("Network") ? data.detail : "");
+})();

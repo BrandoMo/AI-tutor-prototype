@@ -2,26 +2,22 @@
 Student state management, backed by Upstash Redis.
 
 Kept isolated in this module so main.py never needs to know HOW state
-is stored -- only that get_state() and log_attempt() exist.
+is stored -- only that get_state(), add_attempt() and save_state() exist.
+A student's id is their username (see auth.py).
 """
 
-import os
 import copy
 import json
-from dotenv import load_dotenv
-from upstash_redis import Redis
 
-load_dotenv()
-
-redis = Redis(
-    url=os.environ["UPSTASH_REDIS_URL"],
-    token=os.environ["UPSTASH_REDIS_TOKEN"]
-)
+from app.db import redis
 
 DEFAULT_STATE = {
     "current_concept": None,
-    # list of {"concept", "problem_id", "problem", "try", "answer", "correct", "error_type"}
-    "attempts": []
+    # Last 5 graded attempts, as context for the tutor:
+    # {"concept", "problem_id", "problem", "try", "answer", "correct", "misconception", "error_type"}
+    "attempts": [],
+    # Running totals per concept -- see progress.py
+    "progress": {},
 }
 
 
@@ -30,23 +26,16 @@ def get_state(student_id: str) -> dict:
     raw = redis.get(f"student:{student_id}")
     if raw is None:
         return copy.deepcopy(DEFAULT_STATE)
-    return json.loads(raw)
-
-
-def log_attempt(student_id: str, concept: str, correct: bool,
-                error_type: str = None, answer: str = None,
-                problem_id: str = None, problem: str = None, try_number: int = 1):
-    """Append an attempt record, keeping only the last 5 for prompt context."""
-    state = get_state(student_id)
-    state["attempts"].append({
-        "concept": concept,
-        "problem_id": problem_id,
-        "problem": problem,
-        "try": try_number,
-        "correct": correct,
-        "error_type": error_type,
-        "answer": answer
-    })
-    state["attempts"] = state["attempts"][-5:]
-    redis.set(f"student:{student_id}", json.dumps(state))
+    state = json.loads(raw)
+    state.setdefault("progress", {})  # saved before progress existed
     return state
+
+
+def add_attempt(state: dict, record: dict) -> None:
+    """Append an attempt record, keeping only the last 5 for prompt context."""
+    state["attempts"].append(record)
+    state["attempts"] = state["attempts"][-5:]
+
+
+def save_state(student_id: str, state: dict) -> None:
+    redis.set(f"student:{student_id}", json.dumps(state))

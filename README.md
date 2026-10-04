@@ -31,6 +31,16 @@ generating new explanations for the same concept.
 6. `app/state.py` logs each graded attempt (problem, try, answer,
    right/wrong, matched misconception) to Upstash Redis, so history survives
    server restarts and feeds into future explanations.
+7. `app/progress.py` keeps running totals per student and **picks the next
+   problem from their mistakes**: after a wrong answer, the next problems
+   practise that same misconception (shown as "Practising: …") until the
+   student gets one right first time. Otherwise it serves the least-practised
+   problem, never repeats the one just done, and brings missed problems back
+   later. Three right-first-time answers in a row marks the concept
+   **mastered**. The tutor also sees which mistakes a student keeps repeating.
+8. Students **sign in** with a username and password (`app/auth.py`). Each
+   student has their own history and progress, and the server decides who is
+   asking from the session — the browser can't claim to be someone else.
 
 ## Stack
 
@@ -108,15 +118,26 @@ UPSTASH_REDIS_URL=https://your-db.upstash.io
 UPSTASH_REDIS_TOKEN=your_token_here
 ```
 
+When the app is deployed somewhere served over HTTPS, also add
+`COOKIE_SECURE=true` so the sign-in cookie is never sent over plain HTTP.
+Leave it out for local use on `http://127.0.0.1`.
+
 ### 6. Run it
 
 ```
 uvicorn app.main:app --reload
 ```
 
-Open `http://127.0.0.1:8000` in your browser. Answer the practice
-problems — they're checked automatically, and a wrong answer gets a hint
-and a second try. You can also ask the tutor questions directly.
+Open `http://127.0.0.1:8000` in your browser and choose **Create
+account** (a username and a password of 8+ characters — no email needed).
+Answer the practice problems — they're checked automatically, a wrong
+answer gets a hint and a second try, and the next problem adapts to your
+mistakes. You can also ask the tutor questions directly.
+
+How accounts work: passwords are hashed with scrypt, never stored; the
+browser holds only a random session token in an HttpOnly cookie (30 days);
+10 wrong passwords lock that username for 15 minutes. There's no password
+reset yet — a forgotten password means a new account.
 
 To add problems, append to `practice_problems` in the concept's JSON file.
 Each needs a `prompt`, an `answer`, an `answer_format` (`"fraction"`, which
@@ -132,6 +153,14 @@ wrong answers can be diagnosed:
 For an odd wrong answer the rules miss, add `"wrong_answers": {"7/12":
 "<misconception id>"}` to that problem. The test suite checks that every
 problem's numbers, prompt and answer key agree.
+
+Each misconception needs an `id`, a `description` (for the tutor) and a
+short student-facing `label` (shown as "Practising: <label>"). Adaptive
+practice works best with at least 3 problems that can reveal each
+misconception: `fill` and `simplify` problems reveal `adding`,
+`one_part_only` and `wrong_form`; a `compare` problem whose answer is yes
+reveals `same_looking`, and one whose fractions both went up by the same
+amount reveals `adding`.
 
 ### 7. Run the tests (optional)
 

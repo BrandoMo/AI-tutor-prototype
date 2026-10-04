@@ -188,6 +188,36 @@ h1 {
   font: 600 clamp(28px, 6vw, 38px)/1.1 "Fredoka", sans-serif;
 }
 
+/* Toolbar under the title: signed-in student on the left, palettes on the right */
+.toolbar {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.user { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+.user-avatar {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--accent);
+  color: var(--on-accent);
+  border: var(--border) solid var(--line);
+  font: 600 18px/1 "Fredoka", sans-serif;
+}
+button.link {
+  padding: 4px 2px;
+  border: 0;
+  box-shadow: none;
+  background: none;
+  color: var(--ink);
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 /* Palette picker: one circle per palette, showing its own colours */
 .themes {
   display: flex;
@@ -237,6 +267,30 @@ h1 {
   margin-bottom: 24px;
 }
 
+/* Sign-in card */
+.auth h2 { margin: 18px 0 10px; font: 600 26px/1.2 "Fredoka", sans-serif; }
+.auth label { display: block; margin: 14px 0 6px; font-weight: 800; }
+.auth input { width: 100%; }
+.hint { margin: 10px 0 0; font-size: 15px; color: var(--ink-soft); }
+.mode-toggle {
+  display: inline-flex;
+  padding: 4px;
+  border: var(--border) solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-2);
+}
+.mode {
+  padding: 8px 18px;
+  border: 0;
+  border-radius: 999px;
+  box-shadow: none;
+  background: transparent;
+  color: var(--ink);
+  font-size: 15px;
+}
+.mode[aria-pressed="true"] { background: var(--primary); color: var(--on-primary); }
+.pill.wide { width: 100%; margin-top: 20px; }
+
 /* Practice */
 .practice-head {
   display: flex;
@@ -256,6 +310,19 @@ h1 {
   border: var(--border) solid var(--line);
   font: 600 21px/1 "Fredoka", sans-serif;
 }
+.solved, .mastery { display: flex; align-items: center; gap: 10px; }
+.solved-label, .mastery-label { font-weight: 800; color: var(--ink-soft); }
+.mastery.mastered .mastery-label { color: var(--ink); }
+.focus {
+  display: inline-block;
+  margin: 0 0 14px;
+  padding: 6px 14px;
+  border: 2.5px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-2);
+  font-weight: 800;
+  font-size: 15px;
+}
 .dots { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 .dot {
   width: 16px; height: 16px;
@@ -264,8 +331,7 @@ h1 {
   background: var(--surface);
   transition: transform 0.2s;
 }
-.dot.done { background: var(--accent); }
-.dot.current { background: var(--primary); transform: scale(1.35); }
+.dot.done { background: var(--primary); }
 
 .problem-row {
   display: flex;
@@ -289,7 +355,7 @@ h1 {
 .slice.filled { fill: var(--primary); }
 
 /* Inputs and buttons */
-input[type="text"] {
+input[type="text"], input[type="password"] {
   flex: 1;
   min-width: 0;
   height: 60px;

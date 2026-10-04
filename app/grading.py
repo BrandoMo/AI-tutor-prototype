@@ -81,28 +81,6 @@ def pending_retry(concept: str, student_state: dict) -> dict | None:
     return None
 
 
-def next_problem(concept_facts: dict, student_state: dict) -> tuple[dict, int]:
-    """
-    Return (problem, try number). A problem with a retry pending comes
-    back again; otherwise rotate on from the last problem attempted.
-    """
-    problems = concept_facts["practice_problems"]
-    pending = pending_retry(concept_facts["concept"], student_state)
-    if pending:
-        problem = find_problem(concept_facts, pending["problem_id"])
-        if problem:
-            return problem, pending.get("try", 1) + 1
-
-    ids = [p["id"] for p in problems]
-    attempted = [
-        a["problem_id"] for a in concept_attempts(concept_facts["concept"], student_state)
-        if a.get("problem_id") in ids
-    ]
-    if not attempted:
-        return problems[0], 1
-    return problems[(ids.index(attempted[-1]) + 1) % len(problems)], 1
-
-
 def diagnose(problem: dict, answer: str) -> str | None:
     """
     Guess which misconception a wrong (normalized) answer reveals, from
@@ -134,6 +112,25 @@ def diagnose(problem: dict, answer: str) -> str | None:
     return None
 
 
+def targets(problem: dict) -> set[str]:
+    """
+    Misconceptions a problem can reveal -- what diagnose() can detect on it.
+    Used to pick problems that practise a student's recent mistake.
+    """
+    found = set(problem.get("wrong_answers", {}).values())
+    kind = problem.get("kind")
+    if kind in ("fill", "simplify"):
+        found |= {"adding", "one_part_only", "wrong_form"}
+    elif kind == "compare":
+        given_n, given_d = parse_fraction(problem["given"])
+        other_n, other_d = parse_fraction(problem["other"])
+        if Fraction(given_n, given_d) == Fraction(other_n, other_d):
+            found.add("same_looking")
+        elif other_n - given_n == other_d - given_d != 0:
+            found.add("adding")
+    return found
+
+
 def feedback_for(problem: dict, answer: str, misconception_id: str | None) -> str | None:
     """A short message for mistakes code can explain itself, without the tutor."""
     if misconception_id != "wrong_form":
@@ -149,20 +146,29 @@ def feedback_for(problem: dict, answer: str, misconception_id: str | None) -> st
 
 def check_answer(concept_facts: dict, problem: dict, raw_answer: str) -> dict:
     """
-    Grade an answer. Returns {"correct", "answer", "error_type", "feedback"}
-    where error_type is the matched misconception's description, or None if
-    the answer is correct or the mistake isn't recognised.
+    Grade an answer. Returns {"correct", "answer", "misconception",
+    "error_type", "feedback"}: misconception is the matched misconception's
+    id and error_type its description, both None if the answer is correct
+    or the mistake isn't recognised.
     Raises InvalidAnswer if the input can't be parsed.
     """
     answer = normalize(raw_answer, problem["answer_format"])
     correct = answer == normalize(problem["answer"], problem["answer_format"])
 
-    error_type = feedback = None
+    misconception_id = error_type = feedback = None
     if not correct:
         misconception_id = diagnose(problem, answer)
         for m in concept_facts.get("misconceptions", []):
             if m["id"] == misconception_id:
                 error_type = m["description"]
+        if error_type is None:
+            misconception_id = None  # not defined in this concept file
         feedback = feedback_for(problem, answer, misconception_id)
 
-    return {"correct": correct, "answer": answer, "error_type": error_type, "feedback": feedback}
+    return {
+        "correct": correct,
+        "answer": answer,
+        "misconception": misconception_id,
+        "error_type": error_type,
+        "feedback": feedback,
+    }

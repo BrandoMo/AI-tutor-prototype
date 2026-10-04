@@ -44,6 +44,22 @@ def build_prompt(concept_facts: dict, student_state: dict, student_question: str
     # to problems the student hasn't tried yet
     facts = {k: v for k, v in concept_facts.items() if k != "practice_problems"}
 
+    # Running totals, so the tutor knows what the student KEEPS getting wrong
+    progress = student_state.get("progress", {}).get(concept_facts.get("concept"))
+    progress_note = ""
+    if progress:
+        descriptions = {m["id"]: m["description"] for m in concept_facts.get("misconceptions", [])}
+        mistakes = "; ".join(
+            f"{descriptions.get(m, m)} ({count}x)"
+            for m, count in sorted(progress["misconceptions"].items(), key=lambda kv: -kv[1])
+        ) or "none recognised yet"
+        progress_note = f"""
+STUDENT'S PROGRESS ON THIS CONCEPT:
+- Problems solved: {progress["solved"]}
+- Mastered (3 right first time in a row): {"yes" if progress["mastered"] else "not yet"}
+- Mistakes so far, most frequent first: {mistakes}
+"""
+
     # While a retry is pending, the tutor hints rather than giving the answer
     retry_note = ""
     pending = pending_retry(concept_facts.get("concept"), student_state)
@@ -68,12 +84,13 @@ automatically against an answer key, so "correct" is reliable. "try" is
 misconception the wrong answer matches; when it is null on a wrong answer,
 the mistake wasn't recognised, so work out the likely cause from the answer:
 {json.dumps(recent_attempts, indent=2)}
-
+{progress_note}
 STUDENT'S QUESTION OR WRONG ANSWER:
 {student_question}
 
-If the student's recent attempts show a specific misconception, address
-it directly. Otherwise give a clear first explanation with one worked example.
+If the student's recent attempts or progress show a specific misconception,
+address it directly -- especially one they keep repeating. Otherwise give
+a clear first explanation with one worked example.
 {retry_note}"""
     return prompt
 
