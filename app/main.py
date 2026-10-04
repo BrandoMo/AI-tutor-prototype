@@ -6,6 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
+from app.grading import InvalidAnswer, check_answer, find_problem, next_problem
 from app.llm_client import generate_explanation
 from app.state import get_state, log_attempt
 
@@ -46,19 +47,42 @@ def ask(req: AskRequest):
     return {"explanation": explanation}
 
 
-class AttemptRequest(BaseModel):
+@app.get("/problem")
+def problem(student_id: str, concept: str):
+    concept_facts = load_concept(concept)
+    p = next_problem(concept_facts, get_state(student_id))
+    # Never send the answer key to the browser
+    return {"id": p["id"], "prompt": p["prompt"], "answer_format": p["answer_format"]}
+
+
+class AnswerRequest(BaseModel):
     student_id: str
     concept: str
-    correct: bool
-    error_type: str | None = None
-    answer: str | None = None  # what the student actually typed
+    problem_id: str
+    answer: str
 
 
-@app.post("/attempt")
-def attempt(req: AttemptRequest):
-    load_concept(req.concept)  # reject unknown/invalid concepts up front
-    state = log_attempt(req.student_id, req.concept, req.correct, req.error_type, req.answer)
-    return {"state": state}
+@app.post("/answer")
+def answer(req: AnswerRequest):
+    concept_facts = load_concept(req.concept)
+    p = find_problem(concept_facts, req.problem_id)
+    if p is None:
+        raise HTTPException(status_code=404, detail="Unknown problem")
+
+    try:
+        result = check_answer(concept_facts, p, req.answer)
+    except InvalidAnswer as e:
+        # Unparseable input isn't a real attempt -- don't log it
+        raise HTTPException(status_code=400, detail=str(e))
+
+    state = log_attempt(
+        req.student_id, req.concept, result["correct"], result["error_type"],
+        result["answer"], problem_id=p["id"], problem=p["prompt"]
+    )
+    response = {"correct": result["correct"], "error_type": result["error_type"], "state": state}
+    if not result["correct"]:
+        response["correct_answer"] = p["answer"]
+    return response
 
 
 # Serve the simple frontend

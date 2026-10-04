@@ -22,3 +22,19 @@ input {
 button {
   padding: 8px 16px;
 }
+
+#practice {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+#practice h2 {
+  margin-top: 0;
+  font-size: 1.1em;
+}
+
+#practice input {
+  width: 40%;
+}

@@ -38,14 +38,21 @@ def build_prompt(concept_facts: dict, student_state: dict, student_question: str
         if a.get("concept") == concept_facts.get("concept")
     ]
 
+    # Keep the answer keys away from the LLM so it can't hand out answers
+    # to problems the student hasn't tried yet
+    facts = {k: v for k, v in concept_facts.items() if k != "practice_problems"}
+
     prompt = f"""You are a patient math tutor. Explain the concept below to a student,
 using ONLY the facts provided. Do not introduce rules or examples that
 aren't given here. Keep the explanation short, clear, and encouraging.
 
 CONCEPT FACTS:
-{json.dumps(concept_facts, indent=2)}
+{json.dumps(facts, indent=2)}
 
-STUDENT'S RECENT ATTEMPTS (most recent last):
+STUDENT'S RECENT ATTEMPTS (most recent last). These were graded
+automatically against an answer key, so "correct" is reliable. When
+"error_type" is set it names the misconception that wrong answer matches;
+when it is null on a wrong answer, the mistake wasn't a known one:
 {json.dumps(recent_attempts, indent=2)}
 
 STUDENT'S QUESTION OR WRONG ANSWER:

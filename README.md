@@ -18,9 +18,14 @@ generating new explanations for the same concept.
    student's recent attempt history from Redis, and hands both to Gemini.
 3. `app/llm_client.py` builds the prompt and calls the Gemini API, which
    generates a fresh explanation shaped by that specific context.
-4. `app/state.py` logs each attempt (right/wrong + an optional note on what
-   went wrong) to Upstash Redis, so history survives server restarts and
-   feeds into future explanations.
+4. Each concept file also has **practice problems with answer keys**.
+   `app/grading.py` checks the student's answer deterministically (no LLM),
+   and known wrong answers (e.g. `11/12` for "2/3 = ?/12") are mapped to the
+   misconception they reveal.
+5. `app/state.py` logs each graded attempt (problem, answer, right/wrong,
+   matched misconception) to Upstash Redis, so history survives server
+   restarts and feeds into future explanations. A wrong answer automatically
+   asks the tutor to explain the mistake.
 
 ## Stack
 
@@ -104,9 +109,15 @@ UPSTASH_REDIS_TOKEN=your_token_here
 uvicorn app.main:app --reload
 ```
 
-Open `http://127.0.0.1:8000` in your browser. Ask a question about
-equivalent fractions, then use the "Got it right / wrong" buttons to log
-attempts.
+Open `http://127.0.0.1:8000` in your browser. Answer the practice
+problems — they're checked automatically, and a wrong answer gets an
+explanation from the tutor. You can also ask the tutor questions directly.
+
+To add problems, append to `practice_problems` in the concept's JSON file.
+`answer_format` is `"fraction"` (must match exactly — `4/6` is not accepted
+for "?/12") or `"yes_no"`; `wrong_answers` maps common wrong answers to a
+misconception `id`. The test suite checks that every answer key is
+consistent.
 
 ### 7. Run the tests (optional)
 

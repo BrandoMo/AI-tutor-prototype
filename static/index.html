@@ -8,14 +8,18 @@
 <body>
   <h1>AI Tutor — Equivalent Fractions</h1>
 
-  <div id="chat"></div>
-  <div id="feedback" style="display:none;">
-    <p>Did you get it right?</p>
-    <button onclick="logAttempt(true)">✅ Got it right</button>
-    <button onclick="logAttempt(false)">❌ Got it wrong</button>
+  <div id="practice">
+    <h2>Practice</h2>
+    <p id="problem">Loading problem...</p>
+    <input type="text" id="answer" placeholder="Your answer">
+    <button id="submit-answer" onclick="submitAnswer()">Check</button>
+    <button id="next-problem" onclick="loadProblem()" style="display:none;">Next problem</button>
+    <p id="result"></p>
   </div>
 
-  <input type="text" id="question" placeholder="Ask a question or type your answer...">
+  <div id="chat"></div>
+
+  <input type="text" id="question" placeholder="Ask the tutor a question...">
   <button onclick="ask()">Send</button>
 
   <script src="/static/script.js"></script>

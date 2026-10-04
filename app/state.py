@@ -20,7 +20,8 @@ redis = Redis(
 
 DEFAULT_STATE = {
     "current_concept": None,
-    "attempts": []  # list of {"concept": ..., "correct": bool, "error_type": str|None, "answer": str|None}
+    # list of {"concept", "problem_id", "problem", "answer", "correct", "error_type"}
+    "attempts": []
 }
 
 
@@ -33,11 +34,14 @@ def get_state(student_id: str) -> dict:
 
 
 def log_attempt(student_id: str, concept: str, correct: bool,
-                error_type: str = None, answer: str = None):
+                error_type: str = None, answer: str = None,
+                problem_id: str = None, problem: str = None):
     """Append an attempt record, keeping only the last 5 for prompt context."""
     state = get_state(student_id)
     state["attempts"].append({
         "concept": concept,
+        "problem_id": problem_id,
+        "problem": problem,
         "correct": correct,
         "error_type": error_type,
         "answer": answer
