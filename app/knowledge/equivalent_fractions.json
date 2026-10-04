@@ -3,9 +3,26 @@
   "display_name": "Equivalent Fractions",
   "rule": "Two fractions are equivalent if multiplying or dividing the numerator and denominator by the same nonzero number gives one from the other.",
   "misconceptions": [
-    "Thinking you only need to change the numerator OR the denominator, not both together.",
-    "Confusing 'equivalent' with 'written exactly the same way'.",
-    "Adding the same number to numerator and denominator instead of multiplying/dividing."
+    {
+      "id": "one_part_only",
+      "description": "Thinking you only need to change the numerator OR the denominator, not both together.",
+      "label": "change both parts"
+    },
+    {
+      "id": "same_looking",
+      "description": "Confusing 'equivalent' with 'written exactly the same way'.",
+      "label": "equivalent can look different"
+    },
+    {
+      "id": "adding",
+      "description": "Adding (or subtracting) the same number to numerator and denominator instead of multiplying/dividing.",
+      "label": "multiply, don't add"
+    },
+    {
+      "id": "wrong_form",
+      "description": "Giving a fraction that is equivalent but not in the form the question asked for (e.g. the wrong denominator, or not fully simplified).",
+      "label": "read what the question asks for"
+    }
   ],
   "worked_examples": [
     {
@@ -20,5 +37,142 @@
   "prerequisites": [
     "Understanding what numerator and denominator represent",
     "Basic multiplication and division facts"
+  ],
+  "practice_problems": [
+    {
+      "id": "p1",
+      "kind": "fill",
+      "given": "2/3",
+      "target": {
+        "denominator": 12
+      },
+      "prompt": "Find a fraction equivalent to 2/3 with denominator 12.",
+      "answer_format": "fraction",
+      "answer": "8/12"
+    },
+    {
+      "id": "p2",
+      "kind": "compare",
+      "given": "2/5",
+      "other": "4/10",
+      "prompt": "Is 2/5 equivalent to 4/10? (yes or no)",
+      "answer_format": "yes_no",
+      "answer": "yes"
+    },
+    {
+      "id": "p3",
+      "kind": "fill",
+      "given": "3/4",
+      "target": {
+        "denominator": 20
+      },
+      "prompt": "Find a fraction equivalent to 3/4 with denominator 20.",
+      "answer_format": "fraction",
+      "answer": "15/20"
+    },
+    {
+      "id": "p4",
+      "kind": "compare",
+      "given": "1/3",
+      "other": "2/4",
+      "prompt": "Is 1/3 equivalent to 2/4? (yes or no)",
+      "answer_format": "yes_no",
+      "answer": "no"
+    },
+    {
+      "id": "p5",
+      "kind": "fill",
+      "given": "5/6",
+      "target": {
+        "numerator": 15
+      },
+      "prompt": "Find a fraction equivalent to 5/6 with numerator 15.",
+      "answer_format": "fraction",
+      "answer": "15/18"
+    },
+    {
+      "id": "p6",
+      "kind": "simplify",
+      "given": "6/9",
+      "prompt": "Simplify 6/9 to its simplest form.",
+      "answer_format": "fraction",
+      "answer": "2/3"
+    },
+    {
+      "id": "p7",
+      "kind": "compare",
+      "given": "3/4",
+      "other": "9/12",
+      "prompt": "Is 3/4 equivalent to 9/12? (yes or no)",
+      "answer_format": "yes_no",
+      "answer": "yes"
+    },
+    {
+      "id": "p8",
+      "kind": "fill",
+      "given": "1/4",
+      "target": {
+        "denominator": 8
+      },
+      "prompt": "Find a fraction equivalent to 1/4 with denominator 8.",
+      "answer_format": "fraction",
+      "answer": "2/8"
+    },
+    {
+      "id": "p9",
+      "kind": "compare",
+      "given": "2/3",
+      "other": "4/5",
+      "prompt": "Is 2/3 equivalent to 4/5? (yes or no)",
+      "answer_format": "yes_no",
+      "answer": "no"
+    },
+    {
+      "id": "p10",
+      "kind": "simplify",
+      "given": "8/12",
+      "prompt": "Simplify 8/12 to its simplest form.",
+      "answer_format": "fraction",
+      "answer": "2/3"
+    },
+    {
+      "id": "p11",
+      "kind": "compare",
+      "given": "5/10",
+      "other": "1/2",
+      "prompt": "Is 5/10 equivalent to 1/2? (yes or no)",
+      "answer_format": "yes_no",
+      "answer": "yes"
+    },
+    {
+      "id": "p12",
+      "kind": "fill",
+      "given": "3/5",
+      "target": {
+        "numerator": 12
+      },
+      "prompt": "Find a fraction equivalent to 3/5 with numerator 12.",
+      "answer_format": "fraction",
+      "answer": "12/20"
+    },
+    {
+      "id": "p13",
+      "kind": "simplify",
+      "given": "12/16",
+      "prompt": "Simplify 12/16 to its simplest form.",
+      "answer_format": "fraction",
+      "answer": "3/4"
+    },
+    {
+      "id": "p14",
+      "kind": "fill",
+      "given": "4/7",
+      "target": {
+        "denominator": 21
+      },
+      "prompt": "Find a fraction equivalent to 4/7 with denominator 21.",
+      "answer_format": "fraction",
+      "answer": "12/21"
+    }
   ]
 }

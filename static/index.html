@@ -2,22 +2,131 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>AI Tutor Prototype</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Tutor — Equivalent Fractions</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;700;800&display=swap">
   <link rel="stylesheet" href="/static/style.css">
+  <script>
+    // Apply the saved palette before the page paints, so there's no flash of the default
+    try {
+      const saved = localStorage.getItem("palette");
+      if (saved) document.documentElement.dataset.palette = saved;
+    } catch (e) {}
+  </script>
 </head>
 <body>
-  <h1>AI Tutor — Equivalent Fractions</h1>
-
-  <div id="chat"></div>
-  <div id="feedback" style="display:none;">
-    <p>Did you get it right?</p>
-    <button onclick="logAttempt(true)">✅ Got it right</button>
-    <button onclick="logAttempt(false)">❌ Got it wrong</button>
+  <div class="decor" aria-hidden="true">
+    <span class="c1"></span><span class="c2"></span><span class="c3"></span><span class="c4"></span><span class="c5"></span>
   </div>
 
-  <input type="text" id="question" placeholder="Ask a question or type your answer...">
-  <button onclick="ask()">Send</button>
+  <main class="app">
+    <header class="top">
+      <div class="logo" aria-hidden="true">½</div>
+      <div>
+        <p class="eyebrow">AI Tutor</p>
+        <h1>Equivalent Fractions</h1>
+      </div>
+      <div class="toolbar">
+        <div class="user" id="user-area" hidden>
+          <span class="user-avatar" id="user-avatar" aria-hidden="true"></span>
+          <span class="user-name">Hi, <strong id="user-name"></strong></span>
+          <button type="button" class="link" id="sign-out">Sign out</button>
+        </div>
+        <fieldset class="themes">
+          <legend class="sr-only">Colour theme</legend>
+          <label class="theme-option" title="Sunny Pop">
+            <input type="radio" name="palette" value="sunny">
+            <span class="ring"><span class="swatch" data-palette="sunny"></span></span>
+            <span class="sr-only">Sunny Pop</span>
+          </label>
+          <label class="theme-option" title="Midnight Neon">
+            <input type="radio" name="palette" value="neon">
+            <span class="ring"><span class="swatch" data-palette="neon"></span></span>
+            <span class="sr-only">Midnight Neon</span>
+          </label>
+          <label class="theme-option" title="Ocean Splash">
+            <input type="radio" name="palette" value="ocean">
+            <span class="ring"><span class="swatch" data-palette="ocean"></span></span>
+            <span class="sr-only">Ocean Splash</span>
+          </label>
+          <label class="theme-option" title="Berry Blast">
+            <input type="radio" name="palette" value="berry">
+            <span class="ring"><span class="swatch" data-palette="berry"></span></span>
+            <span class="sr-only">Berry Blast</span>
+          </label>
+        </fieldset>
+      </div>
+    </header>
 
+    <section class="card auth" id="auth-card" aria-labelledby="auth-title" hidden>
+      <div class="mode-toggle" role="group" aria-label="Sign in or create an account">
+        <button type="button" class="mode" id="mode-login" aria-pressed="true">Sign in</button>
+        <button type="button" class="mode" id="mode-register" aria-pressed="false">Create account</button>
+      </div>
+      <h2 id="auth-title">Welcome back!</h2>
+      <form id="auth-form" novalidate>
+        <label for="username">Username</label>
+        <input type="text" id="username" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="20" required>
+        <label for="password">Password</label>
+        <input type="password" id="password" autocomplete="current-password" maxlength="200" required>
+        <p class="hint" id="auth-hint" hidden>3-20 letters, numbers or underscores. Password: at least 8 characters.</p>
+        <p class="result bad" id="auth-error" role="alert" hidden></p>
+        <button type="submit" class="pill wide" id="auth-submit">Sign in</button>
+      </form>
+    </section>
+
+    <div id="app-main" hidden>
+      <section class="card practice" aria-labelledby="practice-title">
+        <div class="practice-head">
+          <h2 id="practice-title" class="sr-only">Practice</h2>
+          <div class="solved">
+            <span class="badge" id="solved-count">0</span>
+            <span class="solved-label">solved</span>
+          </div>
+          <div class="mastery" id="mastery">
+            <span class="mastery-label" id="mastery-label">Streak</span>
+            <span class="dots" id="dots" aria-hidden="true"></span>
+          </div>
+        </div>
+        <p class="focus" id="focus" hidden></p>
+
+        <div class="problem-row">
+          <figure class="pie" id="pie" hidden>
+            <div id="pie-chart"></div>
+            <figcaption id="pie-label"></figcaption>
+          </figure>
+          <p class="problem" id="problem">Loading problem...</p>
+        </div>
+
+        <form class="answer-row" id="fraction-form">
+          <label for="answer" class="sr-only">Your answer</label>
+          <input type="text" id="answer" placeholder="e.g. 3/4" autocomplete="off" inputmode="text">
+          <button type="submit" class="round" id="submit-answer">Check</button>
+        </form>
+
+        <div class="yesno-row" id="yesno-buttons" hidden>
+          <button type="button" class="round big yes" data-answer="yes">Yes</button>
+          <button type="button" class="round big no" data-answer="no">No</button>
+        </div>
+
+        <p class="result" id="result" role="status" hidden></p>
+        <button type="button" class="pill" id="next-problem" hidden>Next problem →</button>
+      </section>
+
+      <section class="card chat-card" aria-label="Chat with the tutor">
+        <div id="chat" aria-live="polite"></div>
+        <form class="ask-row" id="ask-form">
+          <label for="question" class="sr-only">Ask the tutor a question</label>
+          <input type="text" id="question" placeholder="Ask a question..." autocomplete="off">
+          <button type="submit" class="round send" aria-label="Send">↑</button>
+        </form>
+      </section>
+    </div>
+  </main>
+
+  <script src="/static/markdown.js"></script>
   <script src="/static/script.js"></script>
 </body>
 </html>

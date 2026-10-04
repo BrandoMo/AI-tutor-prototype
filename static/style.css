@@ -1,24 +1,514 @@
+/*
+ * Palettes: every colour lives in these blocks. The default (Sunny Pop)
+ * sits on :root; the others override it when <html data-palette="...">
+ * is set. Equal specificity, so later blocks win -- keep the default first.
+ * A [data-palette] on any element (like the picker swatches) gives that
+ * element its palette's colours too.
+ */
+:root,
+[data-palette="sunny"] {
+  --bg: #FFE14D;
+  --surface: #FFFFFF;
+  --surface-2: #FFF5C2;
+  --ink: #17123B;
+  --ink-soft: #4B4573;
+  --line: #17123B;
+  --shadow: #17123B;
+  --primary: #FF3D81;
+  --on-primary: #17123B;
+  --accent: #3B5BFF;
+  --on-accent: #FFFFFF;
+  --good: #18D39A;
+  --on-good: #17123B;
+  --bad: #FF5B4F;
+  --on-bad: #17123B;
+  --tutor-bubble: #FFF5C2;
+  --on-tutor: #17123B;
+  --me-bubble: #3B5BFF;
+  --on-me: #FFFFFF;
+  --decor-1: #FF3D81;
+  --decor-2: #3B5BFF;
+  --decor-3: #18D39A;
+}
+
+[data-palette="neon"] {
+  --bg: #110E33;
+  --surface: #1D1950;
+  --surface-2: #2A2570;
+  --ink: #FFFFFF;
+  --ink-soft: #C8C3F5;
+  --line: #F2F0FF;
+  --shadow: #3DF2FF;
+  --primary: #C8FF3D;
+  --on-primary: #110E33;
+  --accent: #FF5CAB;
+  --on-accent: #110E33;
+  --good: #3DFFA2;
+  --on-good: #110E33;
+  --bad: #FF6B6B;
+  --on-bad: #110E33;
+  --tutor-bubble: #2A2570;
+  --on-tutor: #FFFFFF;
+  --me-bubble: #C8FF3D;
+  --on-me: #110E33;
+  --decor-1: #FF5CAB;
+  --decor-2: #3DF2FF;
+  --decor-3: #C8FF3D;
+  color-scheme: dark;
+}
+
+[data-palette="ocean"] {
+  --bg: #BDEBFF;
+  --surface: #FFFFFF;
+  --surface-2: #E8F7FF;
+  --ink: #0A2342;
+  --ink-soft: #3B5878;
+  --line: #0A2342;
+  --shadow: #0A2342;
+  --primary: #E06A00;
+  --on-primary: #0A2342;
+  --accent: #0060DD;
+  --on-accent: #FFFFFF;
+  --good: #00C58A;
+  --on-good: #0A2342;
+  --bad: #FF4D5E;
+  --on-bad: #0A2342;
+  --tutor-bubble: #E8F7FF;
+  --on-tutor: #0A2342;
+  --me-bubble: #0060DD;
+  --on-me: #FFFFFF;
+  --decor-1: #FF8A00;
+  --decor-2: #0060DD;
+  --decor-3: #00C2C7;
+}
+
+[data-palette="berry"] {
+  --bg: #E9D9FF;
+  --surface: #FFFFFF;
+  --surface-2: #F6EEFF;
+  --ink: #23073D;
+  --ink-soft: #5A3F73;
+  --line: #23073D;
+  --shadow: #23073D;
+  --primary: #7A2CF5;
+  --on-primary: #FFFFFF;
+  --accent: #FF6A00;
+  --on-accent: #23073D;
+  --good: #00C9A7;
+  --on-good: #23073D;
+  --bad: #FF3D61;
+  --on-bad: #23073D;
+  --tutor-bubble: #F6EEFF;
+  --on-tutor: #23073D;
+  --me-bubble: #7A2CF5;
+  --on-me: #FFFFFF;
+  --decor-1: #FF6A00;
+  --decor-2: #7A2CF5;
+  --decor-3: #FFD23F;
+}
+
+:root {
+  --border: 3px;
+  --radius: 28px;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
 body {
-  font-family: sans-serif;
-  max-width: 600px;
-  margin: 40px auto;
-  padding: 0 16px;
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Nunito", system-ui, sans-serif;
+  font-size: 17px;
+  line-height: 1.5;
+  overflow-x: hidden;
 }
 
-#chat {
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  padding: 12px;
-  min-height: 200px;
-  margin-bottom: 12px;
-  white-space: pre-wrap;
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
-input {
-  width: 75%;
-  padding: 8px;
+/* Decorative background circles */
+.decor span {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+.decor .c1 { width: 240px; height: 240px; background: var(--decor-1); top: -135px; left: -135px; }
+.decor .c2 { width: 200px; height: 200px; border: 22px solid var(--decor-2); bottom: -50px; right: -60px; }
+.decor .c3 { width: 90px; height: 90px; background: var(--decor-3); top: 36%; right: 7%; }
+.decor .c4 { width: 44px; height: 44px; background: var(--decor-2); bottom: 16%; left: 6%; }
+.decor .c5 { width: 24px; height: 24px; background: var(--decor-1); top: 58%; right: 16%; }
+
+.app {
+  position: relative;
+  z-index: 1;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 28px 16px 48px;
+}
+
+/* Header */
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+.logo {
+  flex: none;
+  width: 68px; height: 68px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--primary);
+  color: var(--on-primary);
+  border: var(--border) solid var(--line);
+  box-shadow: 4px 4px 0 var(--shadow);
+  font: 600 34px/1 "Fredoka", sans-serif;
+}
+.eyebrow {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+h1 {
+  margin: 0;
+  font: 600 clamp(28px, 6vw, 38px)/1.1 "Fredoka", sans-serif;
+}
+
+/* Toolbar under the title: signed-in student on the left, palettes on the right */
+.toolbar {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.user { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+.user-avatar {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--accent);
+  color: var(--on-accent);
+  border: var(--border) solid var(--line);
+  font: 600 18px/1 "Fredoka", sans-serif;
+}
+button.link {
+  padding: 4px 2px;
+  border: 0;
+  box-shadow: none;
+  background: none;
+  color: var(--ink);
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Palette picker: one circle per palette, showing its own colours */
+.themes {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 0 auto;
+  padding: 0;
+  border: 0;
+}
+.theme-option {
+  position: relative;
+  cursor: pointer;
+  /* Resolved here, in the page's palette, before each swatch swaps in its own */
+  --swatch-border: var(--line);
+}
+.theme-option input {
+  position: absolute;
+  opacity: 0;
+  width: 100%; height: 100%;
+  margin: 0;
+  cursor: pointer;
+}
+.theme-option .ring {
+  display: block;
+  padding: 3px;
+  border: 3px solid transparent;
+  border-radius: 50%;
+  transition: border-color 0.15s, transform 0.15s;
+}
+.theme-option:hover .ring { transform: scale(1.08); }
+.theme-option input:checked + .ring { border-color: var(--ink); }
+.theme-option input:focus-visible + .ring { outline: 4px solid var(--accent); outline-offset: 2px; }
+.swatch {
+  display: block;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 2.5px solid var(--swatch-border);
+  background: conic-gradient(var(--bg) 0 34%, var(--primary) 0 67%, var(--accent) 0);
+}
+
+/* Cards */
+.card {
+  background: var(--surface);
+  border: var(--border) solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 6px 6px 0 var(--shadow);
+  padding: 22px;
+  margin-bottom: 24px;
+}
+
+/* Sign-in card */
+.auth h2 { margin: 18px 0 10px; font: 600 26px/1.2 "Fredoka", sans-serif; }
+.auth label { display: block; margin: 14px 0 6px; font-weight: 800; }
+.auth input { width: 100%; }
+.hint { margin: 10px 0 0; font-size: 15px; color: var(--ink-soft); }
+.mode-toggle {
+  display: inline-flex;
+  padding: 4px;
+  border: var(--border) solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-2);
+}
+.mode {
+  padding: 8px 18px;
+  border: 0;
+  border-radius: 999px;
+  box-shadow: none;
+  background: transparent;
+  color: var(--ink);
+  font-size: 15px;
+}
+.mode[aria-pressed="true"] { background: var(--primary); color: var(--on-primary); }
+.pill.wide { width: 100%; margin-top: 20px; }
+
+/* Practice */
+.practice-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.badge {
+  flex: none;
+  width: 46px; height: 46px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--accent);
+  color: var(--on-accent);
+  border: var(--border) solid var(--line);
+  font: 600 21px/1 "Fredoka", sans-serif;
+}
+.solved, .mastery { display: flex; align-items: center; gap: 10px; }
+.solved-label, .mastery-label { font-weight: 800; color: var(--ink-soft); }
+.mastery.mastered .mastery-label { color: var(--ink); }
+.focus {
+  display: inline-block;
+  margin: 0 0 14px;
+  padding: 6px 14px;
+  border: 2.5px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-2);
+  font-weight: 800;
+  font-size: 15px;
+}
+.dots { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.dot {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  border: 2.5px solid var(--line);
+  background: var(--surface);
+  transition: transform 0.2s;
+}
+.dot.done { background: var(--primary); }
+
+.problem-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+.problem {
+  margin: 0;
+  font: 500 clamp(21px, 4.5vw, 25px)/1.3 "Fredoka", sans-serif;
+}
+.pie { flex: none; margin: 0; text-align: center; }
+.pie svg { width: 92px; height: 92px; display: block; }
+.pie figcaption { font: 600 16px/1.2 "Fredoka", sans-serif; margin-top: 4px; }
+.slice {
+  fill: var(--surface-2);
+  stroke: var(--line);
+  stroke-width: 0.06;
+  stroke-linejoin: round;
+}
+.slice.filled { fill: var(--primary); }
+
+/* Inputs and buttons */
+input[type="text"], input[type="password"] {
+  flex: 1;
+  min-width: 0;
+  height: 60px;
+  padding: 0 22px;
+  border: var(--border) solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font: 700 19px "Nunito", sans-serif;
+}
+input[type="text"]::placeholder { color: var(--ink-soft); opacity: 1; }
+
+input:focus-visible, button:focus-visible {
+  outline: 4px solid var(--accent);
+  outline-offset: 3px;
 }
 
 button {
-  padding: 8px 16px;
+  cursor: pointer;
+  font-family: "Nunito", sans-serif;
+  font-weight: 800;
+  border: var(--border) solid var(--line);
+  box-shadow: 4px 4px 0 var(--shadow);
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+button:active:not(:disabled) { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--shadow); }
+button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.round {
+  flex: none;
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: 15px;
+}
+.round.big { width: 96px; height: 96px; font: 600 22px "Fredoka", sans-serif; }
+.round.no { background: var(--accent); color: var(--on-accent); }
+.round.send { font-size: 26px; }
+
+.answer-row, .ask-row { display: flex; gap: 12px; align-items: center; }
+.yesno-row { display: flex; gap: 22px; justify-content: center; padding: 4px 0; }
+
+.pill {
+  display: block;
+  margin: 16px 0 0 auto;
+  padding: 14px 28px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 17px;
+}
+
+.result {
+  margin: 16px 0 0;
+  padding: 12px 18px;
+  border: var(--border) solid var(--line);
+  border-radius: 22px;
+  font-weight: 800;
+  background: var(--surface-2);
+  color: var(--ink);
+}
+.result.good { background: var(--good); color: var(--on-good); }
+.result.bad { background: var(--bad); color: var(--on-bad); }
+
+/* Chat */
+#chat {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 160px;
+  max-height: 440px;
+  overflow-y: auto;
+  padding: 4px 4px 8px;
+  margin-bottom: 14px;
+}
+.msg { display: flex; align-items: flex-end; gap: 10px; max-width: 88%; }
+.msg.me { align-self: flex-end; flex-direction: row-reverse; }
+.msg.note { align-self: center; max-width: 100%; }
+.avatar {
+  flex: none;
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--accent);
+  color: var(--on-accent);
+  border: 2.5px solid var(--line);
+  font: 600 15px/1 "Fredoka", sans-serif;
+}
+.bubble {
+  padding: 12px 16px;
+  border: 2.5px solid var(--line);
+  border-radius: 22px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.tutor .bubble { background: var(--tutor-bubble); color: var(--on-tutor); border-bottom-left-radius: 6px; white-space: normal; }
+
+/* Formatted tutor replies (markdown.js) */
+.bubble p { margin: 0 0 0.6em; }
+.bubble ul, .bubble ol { margin: 0 0 0.6em; padding-left: 1.4em; }
+.bubble li + li { margin-top: 0.25em; }
+.bubble > :last-child { margin-bottom: 0; }
+.bubble strong { font-weight: 800; }
+.bubble code {
+  padding: 0.05em 0.35em;
+  border-radius: 6px;
+  background: var(--surface);
+  font: 0.92em ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.me .bubble { background: var(--me-bubble); color: var(--on-me); border-bottom-right-radius: 6px; }
+.note .bubble { border-style: dashed; font-size: 14px; color: var(--ink-soft); background: transparent; }
+
+/* "Tutor is typing" dots */
+.typing .bubble span {
+  display: inline-block;
+  width: 9px; height: 9px;
+  margin: 0 3px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: bounce 1s infinite ease-in-out;
+}
+.typing .bubble span:nth-child(2) { animation-delay: 0.15s; }
+.typing .bubble span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes bounce {
+  0%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-7px); }
+}
+
+/* Celebration burst on a correct answer */
+.confetti {
+  position: fixed;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  pointer-events: none;
+  z-index: 10;
+  animation: burst 0.9s ease-out forwards;
+}
+@keyframes burst {
+  to { transform: translate(var(--dx), var(--dy)) scale(0.3); opacity: 0; }
+}
+
+@media (max-width: 480px) {
+  .card { padding: 18px; }
+  .pie svg { width: 72px; height: 72px; }
+  .problem-row { gap: 14px; }
+  .round.big { width: 84px; height: 84px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confetti { display: none; }
+  .typing .bubble span { animation: none; }
+  button, .dot, .theme-option .ring { transition: none; }
 }

@@ -18,9 +18,29 @@ generating new explanations for the same concept.
    student's recent attempt history from Redis, and hands both to Gemini.
 3. `app/llm_client.py` builds the prompt and calls the Gemini API, which
    generates a fresh explanation shaped by that specific context.
-4. `app/state.py` logs each attempt (right/wrong + an optional note on what
-   went wrong) to Upstash Redis, so history survives server restarts and
-   feeds into future explanations.
+4. Each concept file also has **practice problems with answer keys**.
+   `app/grading.py` checks the student's answer deterministically (no LLM)
+   and diagnoses wrong answers from the shape of the mistake — e.g. `11/12`
+   for "2/3 = ?/12" added 9 to top and bottom, so it's tagged with the
+   "adding instead of multiplying" misconception.
+5. Students get **one retry**. After a first wrong answer the tutor gives a
+   hint but is told not to reveal the answer; after a second wrong answer
+   the answer is shown and the tutor walks through it. Some mistakes (an
+   equivalent fraction in the wrong form, like `4/6` for "?/12") get an
+   instant message from the grader instead of an LLM call.
+6. `app/state.py` logs each graded attempt (problem, try, answer,
+   right/wrong, matched misconception) to Upstash Redis, so history survives
+   server restarts and feeds into future explanations.
+7. `app/progress.py` keeps running totals per student and **picks the next
+   problem from their mistakes**: after a wrong answer, the next problems
+   practise that same misconception (shown as "Practising: …") until the
+   student gets one right first time. Otherwise it serves the least-practised
+   problem, never repeats the one just done, and brings missed problems back
+   later. Three right-first-time answers in a row marks the concept
+   **mastered**. The tutor also sees which mistakes a student keeps repeating.
+8. Students **sign in** with a username and password (`app/auth.py`). Each
+   student has their own history and progress, and the server decides who is
+   asking from the session — the browser can't claim to be someone else.
 
 ## Stack
 
@@ -98,15 +118,63 @@ UPSTASH_REDIS_URL=https://your-db.upstash.io
 UPSTASH_REDIS_TOKEN=your_token_here
 ```
 
+When the app is deployed somewhere served over HTTPS, also add
+`COOKIE_SECURE=true` so the sign-in cookie is never sent over plain HTTP.
+Leave it out for local use on `http://127.0.0.1`.
+
 ### 6. Run it
 
 ```
 uvicorn app.main:app --reload
 ```
 
-Open `http://127.0.0.1:8000` in your browser. Ask a question about
-equivalent fractions, then use the "Got it right / wrong" buttons to log
-attempts.
+Open `http://127.0.0.1:8000` in your browser and choose **Create
+account** (a username and a password of 8+ characters — no email needed).
+Answer the practice problems — they're checked automatically, a wrong
+answer gets a hint and a second try, and the next problem adapts to your
+mistakes. You can also ask the tutor questions directly.
+
+How accounts work: passwords are hashed with scrypt, never stored; the
+browser holds only a random session token in an HttpOnly cookie (30 days);
+10 wrong passwords lock that username for 15 minutes. There's no password
+reset yet — a forgotten password means a new account.
+
+To add problems, append to `practice_problems` in the concept's JSON file.
+Each needs a `prompt`, an `answer`, an `answer_format` (`"fraction"`, which
+must match exactly, or `"yes_no"`), and numbers describing the problem so
+wrong answers can be diagnosed:
+
+| `kind`     | Fields                                               | Example prompt                                  |
+|------------|------------------------------------------------------|-------------------------------------------------|
+| `fill`     | `given`, `target` (`{"denominator": n}` or `{"numerator": n}`) | Find a fraction equivalent to 2/3 with denominator 12. |
+| `simplify` | `given`                                              | Simplify 6/9 to its simplest form.             |
+| `compare`  | `given`, `other`                                     | Is 2/5 equivalent to 4/10? (yes or no)          |
+
+For an odd wrong answer the rules miss, add `"wrong_answers": {"7/12":
+"<misconception id>"}` to that problem. The test suite checks that every
+problem's numbers, prompt and answer key agree.
+
+Each misconception needs an `id`, a `description` (for the tutor) and a
+short student-facing `label` (shown as "Practising: <label>"). Adaptive
+practice works best with at least 3 problems that can reveal each
+misconception: `fill` and `simplify` problems reveal `adding`,
+`one_part_only` and `wrong_form`; a `compare` problem whose answer is yes
+reveals `same_looking`, and one whose fractions both went up by the same
+amount reveals `adding`.
+
+### 7. Run the tests (optional)
+
+```
+pip install -r requirements-dev.txt
+python -m pytest
+node --test tests/markdown.test.js
+```
+
+Tests stub out Redis and Gemini, so they run offline with no API keys.
+The second line needs Node.js 18+ and tests the chat's Markdown formatter.
+
+GitHub Actions runs both on every pull request and every push to `master`
+(see `.github/workflows/tests.yml`); results show up as a check on the PR.
 
 ---
 
