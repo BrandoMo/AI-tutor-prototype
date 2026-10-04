@@ -144,7 +144,7 @@ node --test tests/markdown.test.js
 Tests stub out Redis and Gemini, so they run offline with no API keys.
 The second line needs Node.js 18+ and tests the chat's Markdown formatter.
 
-GitHub Actions runs both on every pull request and every push to `main`
+GitHub Actions runs both on every pull request and every push to `master`
 (see `.github/workflows/tests.yml`); results show up as a check on the PR.
 
 ---
