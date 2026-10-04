@@ -1,40 +1,310 @@
+/* Palette: every colour lives here, so swapping themes is one block */
+:root {
+  --bg: #FFE14D;
+  --surface: #FFFFFF;
+  --surface-2: #FFF5C2;
+  --ink: #17123B;
+  --ink-soft: #4B4573;
+  --line: #17123B;
+  --shadow: #17123B;
+  --primary: #FF3D81;
+  --on-primary: #17123B;
+  --accent: #3B5BFF;
+  --on-accent: #FFFFFF;
+  --good: #18D39A;
+  --on-good: #17123B;
+  --bad: #FF5B4F;
+  --on-bad: #17123B;
+  --tutor-bubble: #FFF5C2;
+  --on-tutor: #17123B;
+  --me-bubble: #3B5BFF;
+  --on-me: #FFFFFF;
+  --decor-1: #FF3D81;
+  --decor-2: #3B5BFF;
+  --decor-3: #18D39A;
+
+  --border: 3px;
+  --radius: 28px;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
 body {
-  font-family: sans-serif;
-  max-width: 600px;
-  margin: 40px auto;
-  padding: 0 16px;
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Nunito", system-ui, sans-serif;
+  font-size: 17px;
+  line-height: 1.5;
+  overflow-x: hidden;
 }
 
-#chat {
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  padding: 12px;
-  min-height: 200px;
-  margin-bottom: 12px;
-  white-space: pre-wrap;
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
-input {
-  width: 75%;
-  padding: 8px;
+/* Decorative background circles */
+.decor span {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+.decor .c1 { width: 240px; height: 240px; background: var(--decor-1); top: -135px; left: -135px; }
+.decor .c2 { width: 200px; height: 200px; border: 22px solid var(--decor-2); bottom: -50px; right: -60px; }
+.decor .c3 { width: 90px; height: 90px; background: var(--decor-3); top: 22%; right: 7%; }
+.decor .c4 { width: 44px; height: 44px; background: var(--decor-2); bottom: 16%; left: 6%; }
+.decor .c5 { width: 24px; height: 24px; background: var(--decor-1); top: 58%; right: 16%; }
+
+.app {
+  position: relative;
+  z-index: 1;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 28px 16px 48px;
+}
+
+/* Header */
+.top {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+.logo {
+  flex: none;
+  width: 68px; height: 68px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--primary);
+  color: var(--on-primary);
+  border: var(--border) solid var(--line);
+  box-shadow: 4px 4px 0 var(--shadow);
+  font: 600 34px/1 "Fredoka", sans-serif;
+}
+.eyebrow {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+h1 {
+  margin: 0;
+  font: 600 clamp(28px, 6vw, 38px)/1.1 "Fredoka", sans-serif;
+}
+
+/* Cards */
+.card {
+  background: var(--surface);
+  border: var(--border) solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 6px 6px 0 var(--shadow);
+  padding: 22px;
+  margin-bottom: 24px;
+}
+
+/* Practice */
+.practice-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.badge {
+  flex: none;
+  width: 46px; height: 46px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--accent);
+  color: var(--on-accent);
+  border: var(--border) solid var(--line);
+  font: 600 21px/1 "Fredoka", sans-serif;
+}
+.dots { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.dot {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  border: 2.5px solid var(--line);
+  background: var(--surface);
+  transition: transform 0.2s;
+}
+.dot.done { background: var(--accent); }
+.dot.current { background: var(--primary); transform: scale(1.35); }
+
+.problem-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+.problem {
+  margin: 0;
+  font: 500 clamp(21px, 4.5vw, 25px)/1.3 "Fredoka", sans-serif;
+}
+.pie { flex: none; margin: 0; text-align: center; }
+.pie svg { width: 92px; height: 92px; display: block; }
+.pie figcaption { font: 600 16px/1.2 "Fredoka", sans-serif; margin-top: 4px; }
+.slice {
+  fill: var(--surface-2);
+  stroke: var(--line);
+  stroke-width: 0.06;
+  stroke-linejoin: round;
+}
+.slice.filled { fill: var(--primary); }
+
+/* Inputs and buttons */
+input[type="text"] {
+  flex: 1;
+  min-width: 0;
+  height: 60px;
+  padding: 0 22px;
+  border: var(--border) solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font: 700 19px "Nunito", sans-serif;
+}
+input[type="text"]::placeholder { color: var(--ink-soft); opacity: 1; }
+
+input:focus-visible, button:focus-visible {
+  outline: 4px solid var(--accent);
+  outline-offset: 3px;
 }
 
 button {
-  padding: 8px 16px;
+  cursor: pointer;
+  font-family: "Nunito", sans-serif;
+  font-weight: 800;
+  border: var(--border) solid var(--line);
+  box-shadow: 4px 4px 0 var(--shadow);
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+button:active:not(:disabled) { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--shadow); }
+button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.round {
+  flex: none;
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: 15px;
+}
+.round.big { width: 96px; height: 96px; font: 600 22px "Fredoka", sans-serif; }
+.round.no { background: var(--accent); color: var(--on-accent); }
+.round.send { font-size: 26px; }
+
+.answer-row, .ask-row { display: flex; gap: 12px; align-items: center; }
+.yesno-row { display: flex; gap: 22px; justify-content: center; padding: 4px 0; }
+
+.pill {
+  display: block;
+  margin: 16px 0 0 auto;
+  padding: 14px 28px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 17px;
 }
 
-#practice {
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  padding: 12px;
-  margin-bottom: 12px;
+.result {
+  margin: 16px 0 0;
+  padding: 12px 18px;
+  border: var(--border) solid var(--line);
+  border-radius: 22px;
+  font-weight: 800;
+  background: var(--surface-2);
+  color: var(--ink);
+}
+.result.good { background: var(--good); color: var(--on-good); }
+.result.bad { background: var(--bad); color: var(--on-bad); }
+
+/* Chat */
+#chat {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 160px;
+  max-height: 440px;
+  overflow-y: auto;
+  padding: 4px 4px 8px;
+  margin-bottom: 14px;
+}
+.msg { display: flex; align-items: flex-end; gap: 10px; max-width: 88%; }
+.msg.me { align-self: flex-end; flex-direction: row-reverse; }
+.msg.note { align-self: center; max-width: 100%; }
+.avatar {
+  flex: none;
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--accent);
+  color: var(--on-accent);
+  border: 2.5px solid var(--line);
+  font: 600 15px/1 "Fredoka", sans-serif;
+}
+.bubble {
+  padding: 12px 16px;
+  border: 2.5px solid var(--line);
+  border-radius: 22px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.tutor .bubble { background: var(--tutor-bubble); color: var(--on-tutor); border-bottom-left-radius: 6px; }
+.me .bubble { background: var(--me-bubble); color: var(--on-me); border-bottom-right-radius: 6px; }
+.note .bubble { border-style: dashed; font-size: 14px; color: var(--ink-soft); background: transparent; }
+
+/* "Tutor is typing" dots */
+.typing .bubble span {
+  display: inline-block;
+  width: 9px; height: 9px;
+  margin: 0 3px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: bounce 1s infinite ease-in-out;
+}
+.typing .bubble span:nth-child(2) { animation-delay: 0.15s; }
+.typing .bubble span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes bounce {
+  0%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-7px); }
 }
 
-#practice h2 {
-  margin-top: 0;
-  font-size: 1.1em;
+/* Celebration burst on a correct answer */
+.confetti {
+  position: fixed;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  pointer-events: none;
+  z-index: 10;
+  animation: burst 0.9s ease-out forwards;
+}
+@keyframes burst {
+  to { transform: translate(var(--dx), var(--dy)) scale(0.3); opacity: 0; }
 }
 
-#practice input {
-  width: 40%;
+@media (max-width: 480px) {
+  .card { padding: 18px; }
+  .pie svg { width: 72px; height: 72px; }
+  .problem-row { gap: 14px; }
+  .round.big { width: 84px; height: 84px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confetti { display: none; }
+  .typing .bubble span { animation: none; }
+  button, .dot { transition: none; }
 }

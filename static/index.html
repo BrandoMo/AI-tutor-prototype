@@ -2,25 +2,66 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>AI Tutor Prototype</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Tutor — Equivalent Fractions</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;700;800&display=swap">
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-  <h1>AI Tutor — Equivalent Fractions</h1>
-
-  <div id="practice">
-    <h2>Practice</h2>
-    <p id="problem">Loading problem...</p>
-    <input type="text" id="answer" placeholder="Your answer">
-    <button id="submit-answer" onclick="submitAnswer()">Check</button>
-    <button id="next-problem" onclick="loadProblem()" style="display:none;">Next problem</button>
-    <p id="result"></p>
+  <div class="decor" aria-hidden="true">
+    <span class="c1"></span><span class="c2"></span><span class="c3"></span><span class="c4"></span><span class="c5"></span>
   </div>
 
-  <div id="chat"></div>
+  <main class="app">
+    <header class="top">
+      <div class="logo" aria-hidden="true">½</div>
+      <div>
+        <p class="eyebrow">AI Tutor</p>
+        <h1>Equivalent Fractions</h1>
+      </div>
+    </header>
 
-  <input type="text" id="question" placeholder="Ask the tutor a question...">
-  <button onclick="ask()">Send</button>
+    <section class="card practice" aria-labelledby="practice-title">
+      <div class="practice-head">
+        <h2 id="practice-title" class="sr-only">Practice</h2>
+        <span class="badge" id="problem-number" aria-label="Problem number">1</span>
+        <div class="dots" id="dots" aria-hidden="true"></div>
+      </div>
+
+      <div class="problem-row">
+        <figure class="pie" id="pie" hidden>
+          <div id="pie-chart"></div>
+          <figcaption id="pie-label"></figcaption>
+        </figure>
+        <p class="problem" id="problem">Loading problem...</p>
+      </div>
+
+      <form class="answer-row" id="fraction-form">
+        <label for="answer" class="sr-only">Your answer</label>
+        <input type="text" id="answer" placeholder="e.g. 3/4" autocomplete="off" inputmode="text">
+        <button type="submit" class="round" id="submit-answer">Check</button>
+      </form>
+
+      <div class="yesno-row" id="yesno-buttons" hidden>
+        <button type="button" class="round big yes" data-answer="yes">Yes</button>
+        <button type="button" class="round big no" data-answer="no">No</button>
+      </div>
+
+      <p class="result" id="result" role="status" hidden></p>
+      <button type="button" class="pill" id="next-problem" hidden>Next problem →</button>
+    </section>
+
+    <section class="card chat-card" aria-label="Chat with the tutor">
+      <div id="chat" aria-live="polite"></div>
+      <form class="ask-row" id="ask-form">
+        <label for="question" class="sr-only">Ask the tutor a question</label>
+        <input type="text" id="question" placeholder="Ask a question..." autocomplete="off">
+        <button type="submit" class="round send" aria-label="Send">↑</button>
+      </form>
+    </section>
+  </main>
 
   <script src="/static/script.js"></script>
 </body>

@@ -53,8 +53,17 @@ def ask(req: AskRequest):
 def problem(student_id: str, concept: str):
     concept_facts = load_concept(concept)
     p, try_number = next_problem(concept_facts, get_state(student_id))
+    problems = concept_facts["practice_problems"]
     # Never send the answer key to the browser
-    return {"id": p["id"], "prompt": p["prompt"], "answer_format": p["answer_format"], "try": try_number}
+    return {
+        "id": p["id"],
+        "prompt": p["prompt"],
+        "answer_format": p["answer_format"],
+        "try": try_number,
+        "given": p.get("given"),  # shown as a pie chart; already in the prompt text
+        "number": problems.index(p) + 1,
+        "total": len(problems),
+    }
 
 
 class AnswerRequest(BaseModel):

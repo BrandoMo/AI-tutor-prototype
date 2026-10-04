@@ -81,6 +81,9 @@ def test_problem_does_not_leak_answer():
         "prompt": "Find a fraction equivalent to 2/3 with denominator 12.",
         "answer_format": "fraction",
         "try": 1,
+        "given": "2/3",
+        "number": 1,
+        "total": 6,
     }
 
 
