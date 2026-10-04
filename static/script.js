@@ -60,6 +60,9 @@ async function loadProblem() {
 
   currentProblem = await res.json();
   problemEl.textContent = currentProblem.prompt;
+  if (currentProblem.try > 1) {
+    document.getElementById("result").textContent = "Second try at this one.";
+  }
   answerEl.value = "";
   answerEl.placeholder = currentProblem.answer_format === "yes_no" ? "yes or no" : "e.g. 3/4";
   answerEl.disabled = false;
@@ -105,17 +108,34 @@ async function submitAnswer() {
     return;
   }
 
-  document.getElementById("next-problem").style.display = "inline-block";
-
   if (data.correct) {
-    resultEl.textContent = "✅ Correct!";
+    resultEl.textContent = data.try > 1 ? "✅ Correct on your second try!" : "✅ Correct!";
+    document.getElementById("next-problem").style.display = "inline-block";
     return;
   }
 
-  resultEl.textContent = `❌ Not quite. The answer was ${data.correct_answer}.`;
-  // Have the tutor explain the mistake; it sees this attempt in the history
-  addToChat(`You answered "${answer}" to: ${currentProblem.prompt}`);
-  await askTutor(`I answered "${answer}" to the problem "${currentProblem.prompt}" and got it wrong. Why?`);
+  if (data.finished) {
+    // Out of tries: reveal the answer and have the tutor walk through it
+    resultEl.textContent = `❌ Not quite. The answer was ${data.correct_answer}.`;
+    document.getElementById("next-problem").style.display = "inline-block";
+    addToChat(`You answered "${answer}" to: ${currentProblem.prompt}`);
+    await askTutor(`I answered "${answer}" to the problem "${currentProblem.prompt}" and got it wrong again. The answer is ${data.correct_answer}. Can you walk me through it?`);
+    return;
+  }
+
+  // First wrong try: give a hint (from the grader if it can explain the
+  // mistake itself, otherwise from the tutor), then let them retry
+  resultEl.textContent = data.feedback
+    ? `❌ ${data.feedback} Try again.`
+    : "❌ Not quite — read the tutor's hint below, then try again.";
+  if (!data.feedback) {
+    addToChat(`You answered "${answer}" to: ${currentProblem.prompt}`);
+    await askTutor(`I answered "${answer}" to the problem "${currentProblem.prompt}" and got it wrong. Can I have a hint?`);
+  }
+  answerEl.value = "";
+  answerEl.disabled = false;
+  submitEl.disabled = false;
+  answerEl.focus();
 }
 
 document.getElementById("answer").addEventListener("keydown", (e) => {

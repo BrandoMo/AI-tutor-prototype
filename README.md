@@ -19,13 +19,18 @@ generating new explanations for the same concept.
 3. `app/llm_client.py` builds the prompt and calls the Gemini API, which
    generates a fresh explanation shaped by that specific context.
 4. Each concept file also has **practice problems with answer keys**.
-   `app/grading.py` checks the student's answer deterministically (no LLM),
-   and known wrong answers (e.g. `11/12` for "2/3 = ?/12") are mapped to the
-   misconception they reveal.
-5. `app/state.py` logs each graded attempt (problem, answer, right/wrong,
-   matched misconception) to Upstash Redis, so history survives server
-   restarts and feeds into future explanations. A wrong answer automatically
-   asks the tutor to explain the mistake.
+   `app/grading.py` checks the student's answer deterministically (no LLM)
+   and diagnoses wrong answers from the shape of the mistake — e.g. `11/12`
+   for "2/3 = ?/12" added 9 to top and bottom, so it's tagged with the
+   "adding instead of multiplying" misconception.
+5. Students get **one retry**. After a first wrong answer the tutor gives a
+   hint but is told not to reveal the answer; after a second wrong answer
+   the answer is shown and the tutor walks through it. Some mistakes (an
+   equivalent fraction in the wrong form, like `4/6` for "?/12") get an
+   instant message from the grader instead of an LLM call.
+6. `app/state.py` logs each graded attempt (problem, try, answer,
+   right/wrong, matched misconception) to Upstash Redis, so history survives
+   server restarts and feeds into future explanations.
 
 ## Stack
 
@@ -110,14 +115,23 @@ uvicorn app.main:app --reload
 ```
 
 Open `http://127.0.0.1:8000` in your browser. Answer the practice
-problems — they're checked automatically, and a wrong answer gets an
-explanation from the tutor. You can also ask the tutor questions directly.
+problems — they're checked automatically, and a wrong answer gets a hint
+and a second try. You can also ask the tutor questions directly.
 
 To add problems, append to `practice_problems` in the concept's JSON file.
-`answer_format` is `"fraction"` (must match exactly — `4/6` is not accepted
-for "?/12") or `"yes_no"`; `wrong_answers` maps common wrong answers to a
-misconception `id`. The test suite checks that every answer key is
-consistent.
+Each needs a `prompt`, an `answer`, an `answer_format` (`"fraction"`, which
+must match exactly, or `"yes_no"`), and numbers describing the problem so
+wrong answers can be diagnosed:
+
+| `kind`     | Fields                                               | Example prompt                                  |
+|------------|------------------------------------------------------|-------------------------------------------------|
+| `fill`     | `given`, `target` (`{"denominator": n}` or `{"numerator": n}`) | Find a fraction equivalent to 2/3 with denominator 12. |
+| `simplify` | `given`                                              | Simplify 6/9 to its simplest form.             |
+| `compare`  | `given`, `other`                                     | Is 2/5 equivalent to 4/10? (yes or no)          |
+
+For an odd wrong answer the rules miss, add `"wrong_answers": {"7/12":
+"<misconception id>"}` to that problem. The test suite checks that every
+problem's numbers, prompt and answer key agree.
 
 ### 7. Run the tests (optional)
 

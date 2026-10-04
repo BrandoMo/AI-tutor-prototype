@@ -6,7 +6,9 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
-from app.grading import InvalidAnswer, check_answer, find_problem, next_problem
+from app.grading import (
+    MAX_TRIES, InvalidAnswer, check_answer, find_problem, next_problem, pending_retry
+)
 from app.llm_client import generate_explanation
 from app.state import get_state, log_attempt
 
@@ -50,9 +52,9 @@ def ask(req: AskRequest):
 @app.get("/problem")
 def problem(student_id: str, concept: str):
     concept_facts = load_concept(concept)
-    p = next_problem(concept_facts, get_state(student_id))
+    p, try_number = next_problem(concept_facts, get_state(student_id))
     # Never send the answer key to the browser
-    return {"id": p["id"], "prompt": p["prompt"], "answer_format": p["answer_format"]}
+    return {"id": p["id"], "prompt": p["prompt"], "answer_format": p["answer_format"], "try": try_number}
 
 
 class AnswerRequest(BaseModel):
@@ -75,12 +77,25 @@ def answer(req: AnswerRequest):
         # Unparseable input isn't a real attempt -- don't log it
         raise HTTPException(status_code=400, detail=str(e))
 
+    # Second try only if this problem's first try was wrong
+    pending = pending_retry(req.concept, get_state(req.student_id))
+    try_number = pending.get("try", 1) + 1 if pending and pending["problem_id"] == p["id"] else 1
+    finished = result["correct"] or try_number >= MAX_TRIES
+
     state = log_attempt(
         req.student_id, req.concept, result["correct"], result["error_type"],
-        result["answer"], problem_id=p["id"], problem=p["prompt"]
+        result["answer"], problem_id=p["id"], problem=p["prompt"], try_number=try_number
     )
-    response = {"correct": result["correct"], "error_type": result["error_type"], "state": state}
-    if not result["correct"]:
+    response = {
+        "correct": result["correct"],
+        "try": try_number,
+        "finished": finished,
+        "error_type": result["error_type"],
+        "feedback": result["feedback"],
+        "state": state,
+    }
+    # Only reveal the answer once there are no retries left
+    if finished and not result["correct"]:
         response["correct_answer"] = p["answer"]
     return response
 
