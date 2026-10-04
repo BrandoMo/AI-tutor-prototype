@@ -138,9 +138,14 @@ problem's numbers, prompt and answer key agree.
 ```
 pip install -r requirements-dev.txt
 python -m pytest
+node --test tests/markdown.test.js
 ```
 
 Tests stub out Redis and Gemini, so they run offline with no API keys.
+The second line needs Node.js 18+ and tests the chat's Markdown formatter.
+
+GitHub Actions runs both on every pull request and every push to `main`
+(see `.github/workflows/tests.yml`); results show up as a check on the PR.
 
 ---
 

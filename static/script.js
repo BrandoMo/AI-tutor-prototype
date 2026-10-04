@@ -35,7 +35,10 @@ function addMessage(role, text) {
   }
   const bubble = document.createElement("div");
   bubble.className = "bubble";
-  bubble.textContent = text; // textContent, never innerHTML: LLM output is untrusted
+  // Tutor replies get safe Markdown formatting (see markdown.js); everything
+  // else is plain text. Never innerHTML: LLM output is untrusted.
+  if (role === "tutor") renderMarkdown(bubble, text);
+  else bubble.textContent = text;
   row.appendChild(bubble);
 
   const chat = $("chat");

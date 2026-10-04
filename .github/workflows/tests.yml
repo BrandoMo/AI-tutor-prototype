@@ -1,0 +1,37 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      # Redis and Gemini are stubbed in tests/conftest.py -- no secrets needed
+      - name: Backend tests
+        run: python -m pytest
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Check frontend scripts for syntax errors
+        run: for f in static/*.js; do node --check "$f"; done
+
+      - name: Frontend tests
+        run: node --test tests/markdown.test.js
